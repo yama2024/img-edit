@@ -209,21 +209,17 @@
                 <button id="arrowBtn" class="btn tool-btn" data-tool="arrow">矢印</button>
             </div>
 
-            <div class="tool-group">
-                <h3>塗り・枠線</h3>
-                <label>
-                    <input type="checkbox" id="fillShape" checked>
-                    塗りつぶし
-                </label>
-                <label>
-                    <input type="checkbox" id="strokeShape" checked>
-                    枠線
-                </label>
-            </div>
-
             <div class="tool-group color-size-group">
-                <div class="color-section">
-                    <h3>色</h3>
+                <div class="color-fill-section">
+                    <h3>色・塗り・枠線</h3>
+                    <label>
+                        <input type="checkbox" id="fillShape" checked>
+                        塗りつぶし
+                    </label>
+                    <label>
+                        <input type="checkbox" id="strokeShape" checked>
+                        枠線
+                    </label>
                     <div class="color-setting">
                         <input type="color" id="colorPicker" value="#000000">
                         <label for="colorPicker">描画</label>
