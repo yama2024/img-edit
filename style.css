@@ -157,31 +157,39 @@ header h1 {
     color: #666;
 }
 
-.size-setting {
+.size-settings-container {
     display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-bottom: 10px;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
-.size-setting:last-child {
-    margin-bottom: 0;
+.size-setting {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 .size-setting label {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: #666;
     font-weight: 600;
+    white-space: nowrap;
+    min-width: fit-content;
 }
 
 .size-setting input[type="range"] {
-    width: 100%;
+    flex: 1;
+    min-width: 60px;
 }
 
 .size-setting span {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #333;
     font-weight: 500;
+    white-space: nowrap;
+    min-width: 40px;
 }
 
 input[type="range"] {
