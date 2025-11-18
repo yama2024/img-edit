@@ -74,6 +74,10 @@ const zoomValue = document.getElementById('zoomValue');
 const zoomInBtn = document.getElementById('zoomInBtn');
 const zoomOutBtn = document.getElementById('zoomOutBtn');
 const zoomResetBtn = document.getElementById('zoomResetBtn');
+const helpBtn = document.getElementById('helpBtn');
+const helpPanel = document.getElementById('helpPanel');
+const helpCloseBtn = document.getElementById('helpCloseBtn');
+const loadingIndicator = document.getElementById('loadingIndicator');
 
 // 初期化
 function init() {
@@ -302,6 +306,31 @@ toggleInstructionsBtn.addEventListener('click', () => {
     }
 });
 
+// ヘルプパネル機能
+helpBtn.addEventListener('click', () => {
+    helpPanel.classList.add('show');
+});
+
+helpCloseBtn.addEventListener('click', () => {
+    helpPanel.classList.remove('show');
+});
+
+// ヘルプパネルの背景クリックで閉じる
+helpPanel.addEventListener('click', (e) => {
+    if (e.target === helpPanel) {
+        helpPanel.classList.remove('show');
+    }
+});
+
+// ローディングインジケーター表示/非表示
+function showLoading() {
+    loadingIndicator.classList.add('show');
+}
+
+function hideLoading() {
+    loadingIndicator.classList.remove('show');
+}
+
 // カスタムカーソルを更新
 function updateCursor() {
     if (currentTool === 'text') {
@@ -478,6 +507,9 @@ function loadImageFromFile(file) {
         return;
     }
 
+    // ローディング表示
+    showLoading();
+
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
@@ -552,13 +584,18 @@ function loadImageFromFile(file) {
 
             // 履歴に保存
             saveHistory();
+
+            // ローディング非表示
+            hideLoading();
         };
         img.onerror = () => {
+            hideLoading();
             showNotification('画像の読み込みに失敗しました', 'error');
         };
         img.src = e.target.result;
     };
     reader.onerror = () => {
+        hideLoading();
         showNotification('ファイルの読み込みに失敗しました', 'error');
     };
     reader.readAsDataURL(file);
@@ -1069,6 +1106,19 @@ document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
         e.preventDefault();
         redo();
+    }
+
+    // ?キーでヘルプパネルを開く（テキスト入力中でない場合）
+    if (!isTyping && (e.key === '?' || e.key === '/')) {
+        e.preventDefault();
+        helpPanel.classList.add('show');
+    }
+
+    // Escapeキーでヘルプパネルを閉じる
+    if (e.key === 'Escape') {
+        if (helpPanel.classList.contains('show')) {
+            helpPanel.classList.remove('show');
+        }
     }
 
     // テキスト入力中でない場合のみ、数字キーでツール切り替え

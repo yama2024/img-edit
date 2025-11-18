@@ -9,11 +9,90 @@
 <body>
     <div class="container">
         <header>
-            <h1>画像エディター</h1>
+            <h1>🎨 画像エディター</h1>
+            <button id="helpBtn" class="help-btn" title="キーボードショートカット (?)">❓</button>
         </header>
+
+        <!-- ローディングインジケーター -->
+        <div id="loadingIndicator" class="loading-indicator">
+            <div class="loading-spinner"></div>
+            <p>画像を読み込んでいます...</p>
+        </div>
 
         <!-- 通知メッセージエリア -->
         <div id="notification" class="notification"></div>
+
+        <!-- キーボードショートカットヘルプ -->
+        <div id="helpPanel" class="help-panel">
+            <div class="help-content">
+                <div class="help-header">
+                    <h2>⌨️ キーボードショートカット</h2>
+                    <button id="helpCloseBtn" class="help-close">✕</button>
+                </div>
+                <div class="shortcuts-grid">
+                    <div class="shortcut-section">
+                        <h3>ファイル操作</h3>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>O</kbd>
+                            <span>画像を開く</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                            <span>画像を保存</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>N</kbd>
+                            <span>新規キャンバス</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>V</kbd>
+                            <span>画像を貼り付け</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-section">
+                        <h3>編集操作</h3>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+                            <span>元に戻す</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>Y</kbd>
+                            <span>やり直し</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Delete</kbd>
+                            <span>テキストを削除</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-section">
+                        <h3>ツール切り替え</h3>
+                        <div class="shortcut-item">
+                            <kbd>1</kbd>
+                            <span>ブラシ</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>2</kbd>
+                            <span>消しゴム</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>3</kbd>
+                            <span>テキスト</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-section">
+                        <h3>ズーム & パン</h3>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>ホイール</kbd>
+                            <span>ズームイン/アウト</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Shift</kbd> + <kbd>ドラッグ</kbd>
+                            <span>キャンバスをパン</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- テキスト入力ダイアログ -->
         <div id="textInputDialog" class="text-input-dialog">
