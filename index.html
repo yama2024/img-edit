@@ -20,6 +20,19 @@
             <div class="text-input-content">
                 <h3>テキストを入力</h3>
                 <input type="text" id="textInput" placeholder="ここにテキストを入力..." maxlength="100">
+
+                <div class="text-options">
+                    <div class="text-option-group">
+                        <label for="dialogFontSize">フォントサイズ</label>
+                        <input type="number" id="dialogFontSize" value="24" min="10" max="100">
+                        <span>px</span>
+                    </div>
+                    <div class="text-option-group">
+                        <label for="dialogColor">色</label>
+                        <input type="color" id="dialogColor" value="#000000">
+                    </div>
+                </div>
+
                 <div class="text-input-buttons">
                     <button id="textOkBtn" class="btn">OK</button>
                     <button id="textCancelBtn" class="btn btn-secondary">キャンセル</button>

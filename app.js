@@ -18,6 +18,11 @@ let isDraggingText = false;
 let dragStartX = 0;
 let dragStartY = 0;
 
+// 履歴管理（Undo/Redo）
+let historyStack = [];
+let historyIndex = -1;
+const MAX_HISTORY = 50;
+
 // キャンバスのデフォルトサイズ
 canvas.width = 800;
 canvas.height = 600;
@@ -41,6 +46,8 @@ const textInputDialog = document.getElementById('textInputDialog');
 const textInput = document.getElementById('textInput');
 const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
+const dialogFontSize = document.getElementById('dialogFontSize');
+const dialogColor = document.getElementById('dialogColor');
 
 // 初期化
 function init() {
@@ -168,6 +175,11 @@ function loadImageFromFile(file) {
 
             // ドロップヒントを非表示
             dropHint.classList.add('hidden');
+
+            // 履歴をリセットして初期状態を保存
+            historyStack = [];
+            historyIndex = -1;
+            saveHistory();
 
             showNotification('画像を読み込みました！', 'success');
         };
@@ -305,10 +317,12 @@ function editText(e) {
 
         // ダイアログを表示し、既存のテキストを設定
         textInput.value = textObj.text;
+        dialogFontSize.value = textObj.fontSize;
+        dialogColor.value = textObj.color;
+
+        // ツールバーのUIも更新
         fontSize = textObj.fontSize;
         currentColor = textObj.color;
-
-        // UIを更新
         fontSizeSlider.value = fontSize;
         fontSizeValue.textContent = fontSize;
         colorPicker.value = currentColor;
@@ -403,8 +417,110 @@ function draw(e) {
 }
 
 function stopDrawing() {
+    // ブラシ/消しゴムで描画した場合、baseImageを更新
+    if (isDrawing && (currentTool === 'brush' || currentTool === 'eraser') && imageLoaded) {
+        updateBaseImage();
+    }
+
     isDrawing = false;
     isDraggingText = false;
+}
+
+// baseImageを現在のキャンバス状態で更新（テキストレイヤーを除く）
+function updateBaseImage() {
+    // 一時キャンバスを作成
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // 現在のキャンバス内容をコピー
+    tempCtx.drawImage(canvas, 0, 0);
+
+    // 新しいImageオブジェクトとして保存
+    const img = new Image();
+    img.onload = () => {
+        baseImage = img;
+        // ベース画像更新後、履歴を保存
+        saveHistory();
+    };
+    img.src = tempCanvas.toDataURL();
+}
+
+// 履歴管理: 現在の状態を保存
+function saveHistory() {
+    if (!imageLoaded) return;
+
+    // 現在の状態を作成
+    const state = {
+        baseImageData: baseImage ? baseImage.src : null,
+        textObjects: JSON.parse(JSON.stringify(textObjects)),
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
+    };
+
+    // 現在位置より後の履歴を削除（新しい分岐を作成）
+    historyStack = historyStack.slice(0, historyIndex + 1);
+
+    // 新しい状態を追加
+    historyStack.push(state);
+
+    // 最大履歴数を超えたら古いものを削除
+    if (historyStack.length > MAX_HISTORY) {
+        historyStack.shift();
+    } else {
+        historyIndex++;
+    }
+}
+
+// 履歴から状態を復元
+function restoreHistory(state) {
+    if (!state) return;
+
+    // キャンバスサイズを復元
+    canvas.width = state.canvasWidth;
+    canvas.height = state.canvasHeight;
+
+    // ベース画像を復元
+    if (state.baseImageData) {
+        const img = new Image();
+        img.onload = () => {
+            baseImage = img;
+            // テキストオブジェクトを復元
+            textObjects = JSON.parse(JSON.stringify(state.textObjects));
+            selectedTextIndex = -1;
+            // キャンバスを再描画
+            redrawCanvas();
+        };
+        img.src = state.baseImageData;
+    } else {
+        baseImage = null;
+        textObjects = JSON.parse(JSON.stringify(state.textObjects));
+        selectedTextIndex = -1;
+        redrawCanvas();
+    }
+}
+
+// 元に戻す（Undo）
+function undo() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        restoreHistory(historyStack[historyIndex]);
+        showNotification('元に戻しました', 'info');
+    } else {
+        showNotification('これ以上元に戻せません', 'info');
+    }
+}
+
+// やり直し（Redo）
+function redo() {
+    if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        restoreHistory(historyStack[historyIndex]);
+        showNotification('やり直しました', 'info');
+    } else {
+        showNotification('これ以上やり直せません', 'info');
+    }
 }
 
 // テキスト追加
@@ -420,15 +536,19 @@ function addText(e) {
     const pos = getMousePos(e);
     pendingTextPos = pos;
 
-    // ダイアログを表示
+    // ダイアログを表示し、現在のフォントサイズと色を設定
     textInputDialog.classList.add('show');
     textInput.value = '';
+    dialogFontSize.value = fontSize;
+    dialogColor.value = currentColor;
     textInput.focus();
 }
 
 // テキスト入力のOKボタン
 textOkBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
+    const selectedFontSize = parseInt(dialogFontSize.value);
+    const selectedColor = dialogColor.value;
 
     if (text && pendingTextPos) {
         if (pendingTextPos.editingIndex !== undefined) {
@@ -437,8 +557,8 @@ textOkBtn.addEventListener('click', () => {
                 text: text,
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
-                fontSize: fontSize,
-                color: currentColor
+                fontSize: selectedFontSize,
+                color: selectedColor
             };
             showNotification('テキストを更新しました', 'success');
         } else {
@@ -447,14 +567,24 @@ textOkBtn.addEventListener('click', () => {
                 text: text,
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
-                fontSize: fontSize,
-                color: currentColor
+                fontSize: selectedFontSize,
+                color: selectedColor
             });
             showNotification('テキストを追加しました', 'success');
         }
 
+        // グローバル設定も更新
+        fontSize = selectedFontSize;
+        currentColor = selectedColor;
+        fontSizeSlider.value = fontSize;
+        fontSizeValue.textContent = fontSize;
+        colorPicker.value = currentColor;
+
         // キャンバスを再描画
         redrawCanvas();
+
+        // 履歴を保存
+        saveHistory();
     }
 
     // ダイアログを閉じる
@@ -557,13 +687,20 @@ document.addEventListener('keydown', (e) => {
         textObjects.splice(selectedTextIndex, 1);
         selectedTextIndex = -1;
         redrawCanvas();
+        saveHistory();
         showNotification('テキストを削除しました', 'success');
     }
 
-    // Ctrl+Z で元に戻す（簡易版）
-    if (e.ctrlKey && e.key === 'z') {
+    // Ctrl+Z で元に戻す（Undo）
+    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        // 注: 完全な元に戻す機能には履歴管理が必要
+        undo();
+    }
+
+    // Ctrl+Y または Ctrl+Shift+Z でやり直し（Redo）
+    if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+        e.preventDefault();
+        redo();
     }
 });
 
