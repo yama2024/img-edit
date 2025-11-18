@@ -59,6 +59,21 @@ header h1 {
     margin-bottom: 5px;
 }
 
+/* 描画ツールを固定表示 */
+.drawing-tools-sticky {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+    background: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    border: 2px solid #667eea;
+}
+
+.drawing-tools-sticky h3 {
+    color: #667eea;
+    font-weight: 700;
+}
+
 .btn {
     padding: 10px 20px;
     border: none;
