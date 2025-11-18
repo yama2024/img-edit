@@ -85,7 +85,45 @@ img-edit/
 - **クリア機能**: `app.js:532-544` - キャンバスを白色でリセット
   - ベース画像とテキストオブジェクトもクリア
 
-### 5. UI/UXの改善
+### 5. 元に戻す/やり直し（Undo/Redo）
+
+**重要: 最大50ステップまでの履歴を保持し、すべての操作を元に戻すことができます**
+
+#### 履歴管理システム
+- **履歴配列**: `app.js:22` - `history[]` で操作履歴を管理
+- **履歴インデックス**: `app.js:23` - `historyIndex` で現在位置を追跡
+- **最大履歴数**: `app.js:24` - `MAX_HISTORY = 50` で最大保持数を制限
+
+履歴状態の構造:
+```javascript
+{
+    imageData: ImageData,        // キャンバスの画像データ
+    textObjects: [...],          // テキストオブジェクトの配列
+    selectedTextIndex: -1,       // 選択中のテキスト
+    baseImage: "data:image...",  // ベース画像のURL
+    canvasWidth: 800,            // キャンバス幅
+    canvasHeight: 600            // キャンバス高さ
+}
+```
+
+#### 主要機能
+- **履歴の保存**: `app.js:58-83` - `saveHistory()` で現在の状態を保存
+  - 画像データ、テキストオブジェクト、キャンバスサイズを保存
+  - 履歴が最大数を超えたら古いものを削除
+- **履歴の復元**: `app.js:85-112` - `restoreHistory(index)` で指定した履歴を復元
+- **元に戻す**: `app.js:114-122` - `undo()` で1つ前の状態に戻る
+- **やり直し**: `app.js:124-132` - `redo()` で次の状態に進む
+- **自動保存タイミング**:
+  - 画像読み込み後: `app.js:256`
+  - 描画/ドラッグ終了時: `app.js:498`
+  - テキスト追加/編集後: `app.js:552`
+  - テキスト削除後: `app.js:657`
+  - キャンバスクリア後: `app.js:638`
+- **キーボードショートカット**:
+  - Ctrl+Z: 元に戻す
+  - Ctrl+Y または Ctrl+Shift+Z: やり直し
+
+### 6. UI/UXの改善
 - **通知システム**: `app.js:46-53` - 操作の成功/失敗をリアルタイムで表示
 - **テキスト入力ダイアログ**: `style.css:202-217` - モダンなモーダルダイアログ（`display: none`がデフォルト、`.show`で表示）
 - **ダイアログCSS制御**: デフォルト非表示で、`.show`クラス追加時のみ`display: flex !important`
@@ -271,19 +309,21 @@ textInputDialog.addEventListener('click', (e) => {
 
 ## イベント処理フロー
 
-1. **画像読み込み** → `imageLoaded = true` フラグを設定 → `baseImage`に保存 → ドロップヒント非表示
+1. **画像読み込み** → `imageLoaded = true` フラグを設定 → `baseImage`に保存 → ドロップヒント非表示 → `saveHistory()`
 2. **マウスダウン（ブラシ/消しゴム）** → `startDrawing()` → 画像ロードチェック → 描画開始位置を記録
 3. **マウスムーブ（ブラシ/消しゴム）** → `draw()` → 線を描画
-4. **マウスアップ** → `stopDrawing()` → 描画/ドラッグ終了
-5. **テキストツール - 新規追加** → クリック（空白部分） → 画像ロードチェック → ダイアログ表示 → テキスト入力 → Enter/OK → `textObjects`に追加 → `redrawCanvas()`
+4. **マウスアップ** → `stopDrawing()` → 描画/ドラッグ終了 → `saveHistory()`
+5. **テキストツール - 新規追加** → クリック（空白部分） → 画像ロードチェック → ダイアログ表示 → テキスト入力 → Enter/OK → `textObjects`に追加 → `redrawCanvas()` → `saveHistory()`
 6. **テキストツール - 選択** → クリック（テキスト上） → `getClickedTextIndex()` → `selectedTextIndex`設定 → 選択枠表示
-7. **テキストツール - 移動** → テキスト選択中にドラッグ → `draw()` → テキスト座標更新 → `redrawCanvas()`
-8. **テキストツール - 編集** → ダブルクリック（テキスト上） → `editText()` → ダイアログに既存値を事前入力 → Enter/OK → `textObjects`更新 → `redrawCanvas()`
-9. **テキストツール - 削除** → テキスト選択中にDeleteキー → `textObjects`から削除 → `selectedTextIndex`リセット → `redrawCanvas()`
+7. **テキストツール - 移動** → テキスト選択中にドラッグ → `draw()` → テキスト座標更新 → `redrawCanvas()` → マウスアップで `saveHistory()`
+8. **テキストツール - 編集** → ダブルクリック（テキスト上） → `editText()` → ダイアログに既存値を事前入力 → Enter/OK → `textObjects`更新 → `redrawCanvas()` → `saveHistory()`
+9. **テキストツール - 削除** → テキスト選択中にDeleteキー → `textObjects`から削除 → `selectedTextIndex`リセット → `redrawCanvas()` → `saveHistory()`
+10. **元に戻す** → Ctrl+Z → `undo()` → `restoreHistory(historyIndex - 1)` → 通知表示
+11. **やり直し** → Ctrl+Y / Ctrl+Shift+Z → `redo()` → `restoreHistory(historyIndex + 1)` → 通知表示
 
 ## 今後の拡張案
 
-- [ ] Undo/Redo機能（履歴管理の実装が必要）
+- [x] Undo/Redo機能（履歴管理の実装が必要）✅ 実装済み
 - [ ] レイヤー機能
 - [ ] 図形描画ツール（矩形、円、線など）
 - [ ] フィルター効果（明度、コントラスト、ぼかしなど）
