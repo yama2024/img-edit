@@ -57,6 +57,24 @@ const textInput = document.getElementById('textInput');
 const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
 
+// テキストダイアログの新しいUI要素
+const fontFamilySelect = document.getElementById('fontFamily');
+const dialogFontSizeSlider = document.getElementById('dialogFontSize');
+const dialogFontSizeValue = document.getElementById('dialogFontSizeValue');
+const textColorPicker = document.getElementById('textColor');
+const textBoldCheckbox = document.getElementById('textBold');
+const textItalicCheckbox = document.getElementById('textItalic');
+const textShadowCheckbox = document.getElementById('textShadow');
+const textStrokeCheckbox = document.getElementById('textStroke');
+const textBackgroundCheckbox = document.getElementById('textBackground');
+const shadowColorPicker = document.getElementById('shadowColor');
+const strokeTextColorPicker = document.getElementById('strokeTextColor');
+const bgColorPicker = document.getElementById('bgColor');
+const textPreview = document.getElementById('textPreview');
+const shadowColorSection = document.getElementById('shadowColorSection');
+const strokeColorSection = document.getElementById('strokeColorSection');
+const bgColorSection = document.getElementById('bgColorSection');
+
 // 図形ツール用UI要素
 const fillColorPicker = document.getElementById('fillColorPicker');
 const strokeColorPicker = document.getElementById('strokeColorPicker');
@@ -176,9 +194,7 @@ function redrawCanvas() {
 
     // すべてのテキストを描画
     textObjects.forEach((textObj, index) => {
-        ctx.font = `${textObj.fontSize}px Arial`;
-        ctx.fillStyle = textObj.color;
-        ctx.fillText(textObj.text, textObj.x, textObj.y);
+        drawTextObject(textObj);
 
         // 選択中のテキストには枠を表示
         if (index === selectedTextIndex) {
@@ -274,6 +290,63 @@ function drawShape(shape) {
         ctx.lineWidth = shape.lineWidth;
         ctx.stroke();
     }
+
+    ctx.restore();
+}
+
+// テキストオブジェクトを描画する関数
+function drawTextObject(textObj) {
+    ctx.save();
+
+    // フォントスタイルを設定
+    let fontStyle = '';
+    if (textObj.italic) fontStyle += 'italic ';
+    if (textObj.bold) fontStyle += 'bold ';
+    ctx.font = `${fontStyle}${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
+
+    // テキストのメトリクスを取得
+    const lines = textObj.text.split('\n');
+    const lineHeight = textObj.fontSize * 1.2;
+    const metrics = ctx.measureText(textObj.text);
+    const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+    const textHeight = lines.length * lineHeight;
+
+    // 背景を描画
+    if (textObj.backgroundColor) {
+        ctx.fillStyle = textObj.backgroundColor;
+        const padding = textObj.backgroundPadding || 5;
+        ctx.fillRect(
+            textObj.x - padding,
+            textObj.y - textObj.fontSize - padding,
+            textWidth + padding * 2,
+            textHeight + padding * 2
+        );
+    }
+
+    // 影を設定
+    if (textObj.shadow) {
+        ctx.shadowColor = textObj.shadowColor || '#000000';
+        ctx.shadowBlur = textObj.shadowBlur || 4;
+        ctx.shadowOffsetX = textObj.shadowOffsetX || 2;
+        ctx.shadowOffsetY = textObj.shadowOffsetY || 2;
+    }
+
+    // 各行を描画
+    lines.forEach((line, index) => {
+        const yPos = textObj.y + (index * lineHeight);
+
+        // 縁取りを描画
+        if (textObj.stroke) {
+            ctx.strokeStyle = textObj.strokeColor || '#ffffff';
+            ctx.lineWidth = textObj.strokeWidth || 3;
+            ctx.lineJoin = 'round';
+            ctx.strokeText(line, textObj.x, yPos);
+        }
+
+        // テキストを描画
+        ctx.fillStyle = textObj.color;
+        ctx.fillText(line, textObj.x, yPos);
+    });
 
     ctx.restore();
 }
@@ -460,14 +533,21 @@ function getMousePos(e) {
 function getClickedTextIndex(x, y) {
     for (let i = textObjects.length - 1; i >= 0; i--) {
         const textObj = textObjects[i];
-        ctx.font = `${textObj.fontSize}px Arial`;
-        const metrics = ctx.measureText(textObj.text);
-        const textWidth = metrics.width;
-        const textHeight = textObj.fontSize;
+
+        // フォントスタイルを設定
+        let fontStyle = '';
+        if (textObj.italic) fontStyle += 'italic ';
+        if (textObj.bold) fontStyle += 'bold ';
+        ctx.font = `${fontStyle}${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
+
+        const lines = textObj.text.split('\n');
+        const lineHeight = textObj.fontSize * 1.2;
+        const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+        const textHeight = lines.length * lineHeight;
 
         // テキストの範囲をチェック（少し広めの範囲）
         if (x >= textObj.x - 5 && x <= textObj.x + textWidth + 5 &&
-            y >= textObj.y - textHeight && y <= textObj.y + 10) {
+            y >= textObj.y - textObj.fontSize && y <= textObj.y + textHeight) {
             return i;
         }
     }
@@ -553,18 +633,31 @@ function editText(e) {
         selectedTextIndex = clickedIndex;
         const textObj = textObjects[clickedIndex];
 
-        // ダイアログを表示し、既存のテキストを設定
+        // ダイアログに既存の値を設定
         textInput.value = textObj.text;
-        fontSize = textObj.fontSize;
-        currentColor = textObj.color;
+        fontFamilySelect.value = textObj.fontFamily || 'Arial';
+        dialogFontSizeSlider.value = textObj.fontSize || 24;
+        dialogFontSizeValue.textContent = textObj.fontSize || 24;
+        textColorPicker.value = textObj.color || '#000000';
+        textBoldCheckbox.checked = textObj.bold || false;
+        textItalicCheckbox.checked = textObj.italic || false;
+        textShadowCheckbox.checked = textObj.shadow || false;
+        textStrokeCheckbox.checked = textObj.stroke || false;
+        textBackgroundCheckbox.checked = !!textObj.backgroundColor;
+        shadowColorPicker.value = textObj.shadowColor || '#000000';
+        strokeTextColorPicker.value = textObj.strokeColor || '#ffffff';
+        bgColorPicker.value = textObj.backgroundColor || '#ffff00';
 
-        // UIを更新
-        fontSizeSlider.value = fontSize;
-        fontSizeValue.textContent = fontSize;
-        colorPicker.value = currentColor;
+        // エフェクトセクションの表示/非表示
+        shadowColorSection.style.display = textObj.shadow ? 'block' : 'none';
+        strokeColorSection.style.display = textObj.stroke ? 'block' : 'none';
+        bgColorSection.style.display = textObj.backgroundColor ? 'block' : 'none';
 
         // 編集モードとして位置を保持
         pendingTextPos = { x: textObj.x, y: textObj.y, editingIndex: clickedIndex };
+
+        // プレビューを更新
+        updateTextPreview();
 
         textInputDialog.classList.add('show');
         textInput.focus();
@@ -811,10 +904,64 @@ function addText(e) {
     const pos = getMousePos(e);
     pendingTextPos = pos;
 
+    // ダイアログをデフォルト値に設定
+    textInput.value = '';
+    fontFamilySelect.value = 'Arial';
+    dialogFontSizeSlider.value = 24;
+    dialogFontSizeValue.textContent = 24;
+    textColorPicker.value = '#000000';
+    textBoldCheckbox.checked = false;
+    textItalicCheckbox.checked = false;
+    textShadowCheckbox.checked = false;
+    textStrokeCheckbox.checked = false;
+    textBackgroundCheckbox.checked = false;
+    shadowColorPicker.value = '#000000';
+    strokeTextColorPicker.value = '#ffffff';
+    bgColorPicker.value = '#ffff00';
+
+    // エフェクトセクションを非表示
+    shadowColorSection.style.display = 'none';
+    strokeColorSection.style.display = 'none';
+    bgColorSection.style.display = 'none';
+
+    // プレビューを更新
+    updateTextPreview();
+
     // ダイアログを表示
     textInputDialog.classList.add('show');
-    textInput.value = '';
     textInput.focus();
+}
+
+// テキストプレビューを更新する関数
+function updateTextPreview() {
+    const text = textInput.value || 'サンプルテキスト';
+    const fontFamily = fontFamilySelect.value;
+    const fontSize = parseInt(dialogFontSizeSlider.value);
+    const color = textColorPicker.value;
+    const isBold = textBoldCheckbox.checked;
+    const isItalic = textItalicCheckbox.checked;
+    const hasShadow = textShadowCheckbox.checked;
+    const hasStroke = textStrokeCheckbox.checked;
+    const hasBackground = textBackgroundCheckbox.checked;
+    const shadowColor = shadowColorPicker.value;
+    const strokeColor = strokeTextColorPicker.value;
+    const bgColor = bgColorPicker.value;
+
+    // プレビューのスタイルを設定
+    let fontStyle = '';
+    if (isItalic) fontStyle += 'italic ';
+    let fontWeight = isBold ? 'bold' : 'normal';
+
+    textPreview.style.fontFamily = fontFamily;
+    textPreview.style.fontSize = `${fontSize}px`;
+    textPreview.style.color = color;
+    textPreview.style.fontStyle = isItalic ? 'italic' : 'normal';
+    textPreview.style.fontWeight = fontWeight;
+    textPreview.style.textShadow = hasShadow ? `2px 2px 4px ${shadowColor}` : 'none';
+    textPreview.style.webkitTextStroke = hasStroke ? `2px ${strokeColor}` : 'none';
+    textPreview.style.backgroundColor = hasBackground ? bgColor : 'transparent';
+    textPreview.style.padding = hasBackground ? '10px' : '30px';
+    textPreview.textContent = text;
 }
 
 // テキスト入力のOKボタン
@@ -822,25 +969,35 @@ textOkBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
 
     if (text && pendingTextPos) {
+        // テキストオブジェクトを作成
+        const textObj = {
+            text: text,
+            x: pendingTextPos.x,
+            y: pendingTextPos.y,
+            fontSize: parseInt(dialogFontSizeSlider.value),
+            fontFamily: fontFamilySelect.value,
+            color: textColorPicker.value,
+            bold: textBoldCheckbox.checked,
+            italic: textItalicCheckbox.checked,
+            shadow: textShadowCheckbox.checked,
+            shadowColor: shadowColorPicker.value,
+            shadowBlur: 4,
+            shadowOffsetX: 2,
+            shadowOffsetY: 2,
+            stroke: textStrokeCheckbox.checked,
+            strokeColor: strokeTextColorPicker.value,
+            strokeWidth: 3,
+            backgroundColor: textBackgroundCheckbox.checked ? bgColorPicker.value : null,
+            backgroundPadding: 5
+        };
+
         if (pendingTextPos.editingIndex !== undefined) {
             // 既存のテキストを更新
-            textObjects[pendingTextPos.editingIndex] = {
-                text: text,
-                x: pendingTextPos.x,
-                y: pendingTextPos.y,
-                fontSize: fontSize,
-                color: currentColor
-            };
+            textObjects[pendingTextPos.editingIndex] = textObj;
             showNotification('テキストを更新しました', 'success');
         } else {
             // 新しいテキストを追加
-            textObjects.push({
-                text: text,
-                x: pendingTextPos.x,
-                y: pendingTextPos.y,
-                fontSize: fontSize,
-                color: currentColor
-            });
+            textObjects.push(textObj);
             showNotification('テキストを追加しました', 'success');
         }
 
@@ -969,6 +1126,32 @@ document.addEventListener('keydown', (e) => {
         // 注: 完全な元に戻す機能には履歴管理が必要
     }
 });
+
+// テキストダイアログのイベントリスナー（リアルタイムプレビュー）
+textInput.addEventListener('input', updateTextPreview);
+fontFamilySelect.addEventListener('change', updateTextPreview);
+dialogFontSizeSlider.addEventListener('input', () => {
+    dialogFontSizeValue.textContent = dialogFontSizeSlider.value;
+    updateTextPreview();
+});
+textColorPicker.addEventListener('input', updateTextPreview);
+textBoldCheckbox.addEventListener('change', updateTextPreview);
+textItalicCheckbox.addEventListener('change', updateTextPreview);
+textShadowCheckbox.addEventListener('change', () => {
+    shadowColorSection.style.display = textShadowCheckbox.checked ? 'block' : 'none';
+    updateTextPreview();
+});
+textStrokeCheckbox.addEventListener('change', () => {
+    strokeColorSection.style.display = textStrokeCheckbox.checked ? 'block' : 'none';
+    updateTextPreview();
+});
+textBackgroundCheckbox.addEventListener('change', () => {
+    bgColorSection.style.display = textBackgroundCheckbox.checked ? 'block' : 'none';
+    updateTextPreview();
+});
+shadowColorPicker.addEventListener('input', updateTextPreview);
+strokeTextColorPicker.addEventListener('input', updateTextPreview);
+bgColorPicker.addEventListener('input', updateTextPreview);
 
 console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
