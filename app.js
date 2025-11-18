@@ -27,6 +27,8 @@ let shapeStartY = 0;
 let previewShape = null; // 描画中の図形プレビュー
 let fillColor = '#3498db';
 let strokeColor = '#000000';
+let fillOpacity = 100;
+let strokeOpacity = 100;
 let hasFill = true;
 let hasStroke = true;
 let isDraggingShape = false;
@@ -62,6 +64,10 @@ const fillColorPicker = document.getElementById('fillColorPicker');
 const strokeColorPicker = document.getElementById('strokeColorPicker');
 const fillShapeCheckbox = document.getElementById('fillShape');
 const strokeShapeCheckbox = document.getElementById('strokeShape');
+const fillOpacitySlider = document.getElementById('fillOpacity');
+const fillOpacityValue = document.getElementById('fillOpacityValue');
+const strokeOpacitySlider = document.getElementById('strokeOpacity');
+const strokeOpacityValue = document.getElementById('strokeOpacityValue');
 
 // 初期化
 function init() {
@@ -70,6 +76,14 @@ function init() {
 }
 
 init();
+
+// HEX色を透明度付きのRGBAに変換
+function hexToRgba(hex, opacity) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+}
 
 // 通知を表示
 function showNotification(message, type = 'info') {
@@ -137,6 +151,17 @@ fillShapeCheckbox.addEventListener('change', (e) => {
 
 strokeShapeCheckbox.addEventListener('change', (e) => {
     hasStroke = e.target.checked;
+});
+
+// 透明度スライダー
+fillOpacitySlider.addEventListener('input', (e) => {
+    fillOpacity = e.target.value;
+    fillOpacityValue.textContent = fillOpacity;
+});
+
+strokeOpacitySlider.addEventListener('input', (e) => {
+    strokeOpacity = e.target.value;
+    strokeOpacityValue.textContent = strokeOpacity;
 });
 
 // 画像アップロード
@@ -208,11 +233,11 @@ function drawShape(shape) {
 
     if (shape.type === 'rectangle') {
         if (shape.hasFill) {
-            ctx.fillStyle = shape.fill;
+            ctx.fillStyle = hexToRgba(shape.fill, shape.fillOpacity);
             ctx.fillRect(shape.x, shape.y, shape.width, shape.height);
         }
         if (shape.hasStroke) {
-            ctx.strokeStyle = shape.stroke;
+            ctx.strokeStyle = hexToRgba(shape.stroke, shape.strokeOpacity);
             ctx.lineWidth = shape.lineWidth;
             ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
         }
@@ -226,11 +251,11 @@ function drawShape(shape) {
         ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
 
         if (shape.hasFill) {
-            ctx.fillStyle = shape.fill;
+            ctx.fillStyle = hexToRgba(shape.fill, shape.fillOpacity);
             ctx.fill();
         }
         if (shape.hasStroke) {
-            ctx.strokeStyle = shape.stroke;
+            ctx.strokeStyle = hexToRgba(shape.stroke, shape.strokeOpacity);
             ctx.lineWidth = shape.lineWidth;
             ctx.stroke();
         }
@@ -238,7 +263,7 @@ function drawShape(shape) {
         ctx.beginPath();
         ctx.moveTo(shape.x, shape.y);
         ctx.lineTo(shape.x + shape.width, shape.y + shape.height);
-        ctx.strokeStyle = shape.stroke;
+        ctx.strokeStyle = hexToRgba(shape.stroke, shape.strokeOpacity);
         ctx.lineWidth = shape.lineWidth;
         ctx.stroke();
     } else if (shape.type === 'arrow') {
@@ -251,7 +276,7 @@ function drawShape(shape) {
         ctx.beginPath();
         ctx.moveTo(fromX, fromY);
         ctx.lineTo(toX, toY);
-        ctx.strokeStyle = shape.stroke;
+        ctx.strokeStyle = hexToRgba(shape.stroke, shape.strokeOpacity);
         ctx.lineWidth = shape.lineWidth;
         ctx.stroke();
 
@@ -270,7 +295,7 @@ function drawShape(shape) {
             toX - headLength * Math.cos(angle + Math.PI / 6),
             toY - headLength * Math.sin(angle + Math.PI / 6)
         );
-        ctx.strokeStyle = shape.stroke;
+        ctx.strokeStyle = hexToRgba(shape.stroke, shape.strokeOpacity);
         ctx.lineWidth = shape.lineWidth;
         ctx.stroke();
     }
@@ -818,6 +843,8 @@ function draw(e) {
             height: Math.abs(height),
             fill: fillColor,
             stroke: strokeColor,
+            fillOpacity: fillOpacity,
+            strokeOpacity: strokeOpacity,
             lineWidth: brushSize,
             hasFill: shapeFill,
             hasStroke: shapeStroke
