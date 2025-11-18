@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像エディター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>画像エディター</h1>
+        </header>
+
+        <div class="toolbar">
+            <div class="tool-group">
+                <h3>ファイル</h3>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                <button id="uploadBtn" class="btn">画像をアップロード</button>
+                <button id="saveBtn" class="btn">画像を保存</button>
+                <button id="clearBtn" class="btn btn-danger">クリア</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>ツール</h3>
+                <button id="brushBtn" class="btn tool-btn active" data-tool="brush">ブラシ</button>
+                <button id="eraserBtn" class="btn tool-btn" data-tool="eraser">消しゴム</button>
+                <button id="textBtn" class="btn tool-btn" data-tool="text">テキスト</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>色</h3>
+                <input type="color" id="colorPicker" value="#000000">
+                <label for="colorPicker">描画色</label>
+            </div>
+
+            <div class="tool-group">
+                <h3>線の太さ</h3>
+                <input type="range" id="brushSize" min="1" max="50" value="5">
+                <span id="brushSizeValue">5</span>px
+            </div>
+
+            <div class="tool-group">
+                <h3>フォントサイズ</h3>
+                <input type="range" id="fontSize" min="10" max="100" value="24">
+                <span id="fontSizeValue">24</span>px
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="instructions">
+            <p><strong>使い方：</strong></p>
+            <ul>
+                <li>「画像をアップロード」ボタンで画像を読み込む、または Ctrl+V で画像を貼り付け</li>
+                <li>ツールを選択して、キャンバス上で描画またはテキストを追加</li>
+                <li>「画像を保存」ボタンで編集した画像をダウンロード</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
