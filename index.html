@@ -130,6 +130,50 @@
             </div>
         </div>
 
+        <!-- リサイズダイアログ -->
+        <div id="resizeDialog" class="text-input-dialog">
+            <div class="text-input-content" style="max-width: 500px;">
+                <h3>画像リサイズ</h3>
+
+                <!-- 現在のサイズ -->
+                <div class="dialog-section">
+                    <label>現在のサイズ</label>
+                    <p id="currentSize" style="color: #666; margin: 0;">-</p>
+                </div>
+
+                <!-- 新しいサイズ -->
+                <div class="dialog-section">
+                    <label>新しい幅 (px)</label>
+                    <input type="number" id="newWidth" min="1" max="5000" value="800" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <div class="dialog-section">
+                    <label>新しい高さ (px)</label>
+                    <input type="number" id="newHeight" min="1" max="5000" value="600" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+                </div>
+
+                <!-- アスペクト比維持 -->
+                <div class="dialog-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="maintainAspect" checked>
+                        <span>アスペクト比を維持</span>
+                    </label>
+                </div>
+
+                <!-- ボタン -->
+                <div class="text-input-buttons">
+                    <button id="resizeOkBtn" class="btn">リサイズ実行</button>
+                    <button id="resizeCancelBtn" class="btn btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- トリミングコントロール -->
+        <div id="cropControls" class="crop-controls" style="display: none;">
+            <button id="cropApplyBtn" class="btn">✓ トリミング適用</button>
+            <button id="cropCancelBtn" class="btn btn-secondary">✗ キャンセル</button>
+        </div>
+
         <div class="toolbar">
             <div class="tool-group">
                 <h3>ファイル</h3>
@@ -144,6 +188,12 @@
                 <h3>編集</h3>
                 <button id="undoBtn" class="btn" disabled>↶ 元に戻す (Ctrl+Z)</button>
                 <button id="redoBtn" class="btn" disabled>↷ やり直す (Ctrl+Y)</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>画像編集</h3>
+                <button id="cropBtn" class="btn">✂️ トリミング</button>
+                <button id="resizeBtn" class="btn">📏 リサイズ</button>
             </div>
 
             <div class="tool-group">

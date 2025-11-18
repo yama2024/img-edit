@@ -39,6 +39,13 @@ let historyIndex = -1;
 const MAX_HISTORY = 50;
 let isRestoring = false; // 復元中フラグ（無限ループ防止）
 
+// トリミング・リサイズ管理
+let isCropping = false;
+let cropStartX = 0;
+let cropStartY = 0;
+let cropRect = null; // { x, y, width, height }
+let originalAspectRatio = 1;
+
 // キャンバスのデフォルトサイズ
 canvas.width = 800;
 canvas.height = 600;
@@ -88,6 +95,20 @@ const fillColorPicker = document.getElementById('fillColorPicker');
 const strokeColorPicker = document.getElementById('strokeColorPicker');
 const fillShapeCheckbox = document.getElementById('fillShape');
 const strokeShapeCheckbox = document.getElementById('strokeShape');
+
+// トリミング・リサイズ用UI要素
+const cropBtn = document.getElementById('cropBtn');
+const resizeBtn = document.getElementById('resizeBtn');
+const cropControls = document.getElementById('cropControls');
+const cropApplyBtn = document.getElementById('cropApplyBtn');
+const cropCancelBtn = document.getElementById('cropCancelBtn');
+const resizeDialog = document.getElementById('resizeDialog');
+const currentSizeText = document.getElementById('currentSize');
+const newWidthInput = document.getElementById('newWidth');
+const newHeightInput = document.getElementById('newHeight');
+const maintainAspectCheckbox = document.getElementById('maintainAspect');
+const resizeOkBtn = document.getElementById('resizeOkBtn');
+const resizeCancelBtn = document.getElementById('resizeCancelBtn');
 
 // 初期化
 function init() {
@@ -223,6 +244,36 @@ function redrawCanvas() {
         ctx.globalAlpha = 0.7;
         drawShape(previewShape);
         ctx.globalAlpha = 1.0;
+    }
+
+    // トリミング矩形を描画
+    if (isCropping && cropRect) {
+        // 暗いオーバーレイ（選択範囲外）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 選択範囲をクリア（明るく表示）
+        ctx.clearRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+
+        // 選択範囲を再描画
+        if (baseImage) {
+            ctx.drawImage(baseImage,
+                cropRect.x, cropRect.y, cropRect.width, cropRect.height,
+                cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+        }
+
+        // 選択範囲の枠線
+        ctx.strokeStyle = '#667eea';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 5]);
+        ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+        ctx.setLineDash([]);
+
+        // サイズ表示
+        ctx.fillStyle = '#667eea';
+        ctx.font = 'bold 14px Arial';
+        const sizeText = `${Math.round(cropRect.width)} × ${Math.round(cropRect.height)}`;
+        ctx.fillText(sizeText, cropRect.x + 5, cropRect.y - 10);
     }
 }
 
@@ -777,6 +828,14 @@ function editText(e) {
 function startDrawing(e) {
     const pos = getMousePos(e);
 
+    // トリミングモードの場合
+    if (isCropping) {
+        cropStartX = pos.x;
+        cropStartY = pos.y;
+        cropRect = null;
+        return;
+    }
+
     // 図形ツールの場合
     if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
         if (!imageLoaded) {
@@ -866,6 +925,22 @@ function startDrawing(e) {
 
 function draw(e) {
     const pos = getMousePos(e);
+
+    // トリミングモード中のドラッグ
+    if (isCropping && cropStartX !== undefined && cropStartY !== undefined) {
+        const width = pos.x - cropStartX;
+        const height = pos.y - cropStartY;
+
+        cropRect = {
+            x: width >= 0 ? cropStartX : pos.x,
+            y: height >= 0 ? cropStartY : pos.y,
+            width: Math.abs(width),
+            height: Math.abs(height)
+        };
+
+        redrawCanvas();
+        return;
+    }
 
     // 図形のリサイズ中
     if (isResizingShape && selectedShapeIndex !== -1) {
@@ -1239,6 +1314,182 @@ clearBtn.addEventListener('click', () => {
 // Undo/Redoボタン
 undoBtn.addEventListener('click', undo);
 redoBtn.addEventListener('click', redo);
+
+// トリミングボタン
+cropBtn.addEventListener('click', () => {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+        return;
+    }
+
+    isCropping = true;
+    cropRect = null;
+    cropControls.style.display = 'flex';
+    canvas.style.cursor = 'crosshair';
+    showNotification('トリミング範囲をドラッグして選択してください', 'info');
+});
+
+// トリミング適用
+cropApplyBtn.addEventListener('click', () => {
+    if (!cropRect || cropRect.width < 10 || cropRect.height < 10) {
+        showNotification('トリミング範囲が小さすぎます', 'error');
+        return;
+    }
+
+    // トリミングを実行
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = cropRect.width;
+    croppedCanvas.height = cropRect.height;
+    const croppedCtx = croppedCanvas.getContext('2d');
+
+    // ベース画像をトリミング
+    if (baseImage) {
+        croppedCtx.drawImage(baseImage,
+            cropRect.x, cropRect.y, cropRect.width, cropRect.height,
+            0, 0, cropRect.width, cropRect.height);
+    }
+
+    // 図形とテキストを調整
+    textObjects.forEach(textObj => {
+        textObj.x -= cropRect.x;
+        textObj.y -= cropRect.y;
+    });
+
+    shapeObjects.forEach(shape => {
+        shape.x -= cropRect.x;
+        shape.y -= cropRect.y;
+    });
+
+    // 範囲外のオブジェクトを削除
+    textObjects = textObjects.filter(textObj =>
+        textObj.x >= 0 && textObj.x <= cropRect.width &&
+        textObj.y >= 0 && textObj.y <= cropRect.height
+    );
+    shapeObjects = shapeObjects.filter(shape =>
+        shape.x >= 0 && shape.x <= cropRect.width &&
+        shape.y >= 0 && shape.y <= cropRect.height
+    );
+
+    // キャンバスサイズを更新
+    canvas.width = cropRect.width;
+    canvas.height = cropRect.height;
+
+    // ベース画像を更新
+    const newImg = new Image();
+    newImg.onload = () => {
+        baseImage = newImg;
+        isCropping = false;
+        cropRect = null;
+        cropControls.style.display = 'none';
+        canvas.style.cursor = 'crosshair';
+        redrawCanvas();
+        captureState();
+        showNotification('トリミングを適用しました', 'success');
+    };
+    newImg.src = croppedCanvas.toDataURL();
+});
+
+// トリミングキャンセル
+cropCancelBtn.addEventListener('click', () => {
+    isCropping = false;
+    cropRect = null;
+    cropControls.style.display = 'none';
+    canvas.style.cursor = 'crosshair';
+    redrawCanvas();
+    showNotification('トリミングをキャンセルしました', 'info');
+});
+
+// リサイズボタン
+resizeBtn.addEventListener('click', () => {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+        return;
+    }
+
+    // 現在のサイズを表示
+    currentSizeText.textContent = `${canvas.width} × ${canvas.height} px`;
+    newWidthInput.value = canvas.width;
+    newHeightInput.value = canvas.height;
+    originalAspectRatio = canvas.width / canvas.height;
+
+    resizeDialog.classList.add('show');
+});
+
+// リサイズ実行
+resizeOkBtn.addEventListener('click', () => {
+    const newWidth = parseInt(newWidthInput.value);
+    const newHeight = parseInt(newHeightInput.value);
+
+    if (newWidth < 1 || newWidth > 5000 || newHeight < 1 || newHeight > 5000) {
+        showNotification('サイズが範囲外です（1-5000px）', 'error');
+        return;
+    }
+
+    // リサイズを実行
+    const resizedCanvas = document.createElement('canvas');
+    resizedCanvas.width = newWidth;
+    resizedCanvas.height = newHeight;
+    const resizedCtx = resizedCanvas.getContext('2d');
+
+    // ベース画像をリサイズ
+    if (baseImage) {
+        resizedCtx.drawImage(baseImage, 0, 0, newWidth, newHeight);
+    }
+
+    const scaleX = newWidth / canvas.width;
+    const scaleY = newHeight / canvas.height;
+
+    // テキストと図形を拡大縮小
+    textObjects.forEach(textObj => {
+        textObj.x *= scaleX;
+        textObj.y *= scaleY;
+        textObj.fontSize *= Math.min(scaleX, scaleY);
+    });
+
+    shapeObjects.forEach(shape => {
+        shape.x *= scaleX;
+        shape.y *= scaleY;
+        shape.width *= scaleX;
+        shape.height *= scaleY;
+        shape.lineWidth *= Math.min(scaleX, scaleY);
+    });
+
+    // キャンバスサイズを更新
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+
+    // ベース画像を更新
+    const newImg = new Image();
+    newImg.onload = () => {
+        baseImage = newImg;
+        redrawCanvas();
+        captureState();
+        showNotification('リサイズを適用しました', 'success');
+    };
+    newImg.src = resizedCanvas.toDataURL();
+
+    resizeDialog.classList.remove('show');
+});
+
+// リサイズキャンセル
+resizeCancelBtn.addEventListener('click', () => {
+    resizeDialog.classList.remove('show');
+});
+
+// アスペクト比維持
+newWidthInput.addEventListener('input', () => {
+    if (maintainAspectCheckbox.checked && originalAspectRatio) {
+        const newWidth = parseInt(newWidthInput.value);
+        newHeightInput.value = Math.round(newWidth / originalAspectRatio);
+    }
+});
+
+newHeightInput.addEventListener('input', () => {
+    if (maintainAspectCheckbox.checked && originalAspectRatio) {
+        const newHeight = parseInt(newHeightInput.value);
+        newWidthInput.value = Math.round(newHeight * originalAspectRatio);
+    }
+});
 
 // ショートカットキー
 document.addEventListener('keydown', (e) => {

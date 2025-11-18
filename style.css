@@ -476,6 +476,29 @@ input[type="range"] {
     margin: 5px 0;
 }
 
+/* トリミングコントロール */
+.crop-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1500;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.crop-controls::before {
+    content: "範囲を選択してください";
+    font-weight: 600;
+    color: #667eea;
+    margin-right: 10px;
+}
+
 @media (max-width: 768px) {
     .toolbar {
         flex-direction: column;
