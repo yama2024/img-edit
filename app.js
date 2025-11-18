@@ -422,6 +422,11 @@ function stopDrawing() {
         updateBaseImage();
     }
 
+    // テキストを移動した場合、履歴を保存
+    if (isDraggingText && imageLoaded) {
+        saveHistory();
+    }
+
     isDrawing = false;
     isDraggingText = false;
 }
@@ -668,6 +673,11 @@ clearBtn.addEventListener('click', () => {
         baseImage = null;
         textObjects = [];
         selectedTextIndex = -1;
+
+        // 履歴もリセット
+        historyStack = [];
+        historyIndex = -1;
+
         dropHint.classList.remove('hidden');
         showNotification('キャンバスをクリアしました', 'info');
     }
@@ -708,4 +718,6 @@ console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
+console.log('⏮️ Ctrl+Z で元に戻す、Ctrl+Y でやり直し（最大50回まで履歴保存）');
+console.log('💾 Ctrl+S で画像を保存');
 showNotification('画像エディターへようこそ！', 'info');
