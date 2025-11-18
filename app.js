@@ -57,7 +57,6 @@ const pasteBtn = document.getElementById('pasteBtn');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const undoBtn = document.getElementById('undoBtn');
-const redoBtn = document.getElementById('redoBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
@@ -379,7 +378,6 @@ function redo() {
 
 function updateUndoRedoButtons() {
     undoBtn.disabled = historyIndex <= 0;
-    redoBtn.disabled = historyIndex >= historyStates.length - 1;
 }
 
 // 図形を描画する関数
@@ -1318,9 +1316,8 @@ clearBtn.addEventListener('click', () => {
     }
 });
 
-// Undo/Redoボタン
+// Undoボタン
 undoBtn.addEventListener('click', undo);
-redoBtn.addEventListener('click', redo);
 
 // トリミングボタン
 cropBtn.addEventListener('click', () => {
@@ -1736,5 +1733,5 @@ console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
 console.log('📐 図形ツール: ドラッグで描画、クリックで選択、ハンドルでサイズ変更、Deleteキーで削除');
-console.log('↶↷ Undo/Redo: Ctrl+Z で元に戻す、Ctrl+Y でやり直す');
+console.log('↶ 元に戻す: Ctrl+Z');
 showNotification('画像エディターへようこそ！', 'info');
