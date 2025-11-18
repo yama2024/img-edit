@@ -206,14 +206,14 @@ input[type="range"] {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 2000;
 }
 
-.text-input-dialog.hidden {
-    display: none;
+.text-input-dialog.show {
+    display: flex !important;
 }
 
 .text-input-content {

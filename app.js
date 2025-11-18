@@ -226,6 +226,12 @@ function startDrawing(e) {
         return;
     }
 
+    // 画像がロードされていない場合は警告（ブラシ、消しゴム）
+    if (!imageLoaded && (currentTool === 'brush' || currentTool === 'eraser')) {
+        showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+        return;
+    }
+
     isDrawing = true;
     const pos = getMousePos(e);
     lastX = pos.x;
@@ -259,11 +265,17 @@ function stopDrawing() {
 let pendingTextPos = null;
 
 function addText(e) {
+    // 画像がロードされていない場合は警告
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+        return;
+    }
+
     const pos = getMousePos(e);
     pendingTextPos = pos;
 
     // ダイアログを表示
-    textInputDialog.classList.remove('hidden');
+    textInputDialog.classList.add('show');
     textInput.value = '';
     textInput.focus();
 }
@@ -280,14 +292,14 @@ textOkBtn.addEventListener('click', () => {
     }
 
     // ダイアログを閉じる
-    textInputDialog.classList.add('hidden');
+    textInputDialog.classList.remove('show');
     textInput.value = '';
     pendingTextPos = null;
 });
 
 // テキスト入力のキャンセルボタン
 textCancelBtn.addEventListener('click', () => {
-    textInputDialog.classList.add('hidden');
+    textInputDialog.classList.remove('show');
     textInput.value = '';
     pendingTextPos = null;
 });
