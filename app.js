@@ -10,6 +10,14 @@ let lastX = 0;
 let lastY = 0;
 let imageLoaded = false;
 
+// テキストレイヤー管理
+let textObjects = [];
+let selectedTextIndex = -1;
+let baseImage = null; // 元の画像を保持
+let isDraggingText = false;
+let dragStartX = 0;
+let dragStartY = 0;
+
 // キャンバスのデフォルトサイズ
 canvas.width = 800;
 canvas.height = 600;
@@ -97,6 +105,40 @@ fileInput.addEventListener('change', (e) => {
     }
 });
 
+// キャンバスを再描画
+function redrawCanvas() {
+    // キャンバスをクリア
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // ベース画像を描画
+    if (baseImage) {
+        ctx.drawImage(baseImage, 0, 0);
+    } else {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // すべてのテキストを描画
+    textObjects.forEach((textObj, index) => {
+        ctx.font = `${textObj.fontSize}px Arial`;
+        ctx.fillStyle = textObj.color;
+        ctx.fillText(textObj.text, textObj.x, textObj.y);
+
+        // 選択中のテキストには枠を表示
+        if (index === selectedTextIndex) {
+            const metrics = ctx.measureText(textObj.text);
+            const textWidth = metrics.width;
+            const textHeight = textObj.fontSize;
+
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(textObj.x - 5, textObj.y - textHeight, textWidth + 10, textHeight + 10);
+            ctx.setLineDash([]);
+        }
+    });
+}
+
 // 画像ファイルを読み込む
 function loadImageFromFile(file) {
     if (!file || !file.type.match('image.*')) {
@@ -111,7 +153,17 @@ function loadImageFromFile(file) {
             // キャンバスサイズを画像に合わせる
             canvas.width = img.width;
             canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+
+            // ベース画像として保存
+            baseImage = img;
+
+            // 既存のテキストをクリア
+            textObjects = [];
+            selectedTextIndex = -1;
+
+            // キャンバスを再描画
+            redrawCanvas();
+
             imageLoaded = true;
 
             // ドロップヒントを非表示
@@ -203,6 +255,7 @@ canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mousemove', draw);
 canvas.addEventListener('mouseup', stopDrawing);
 canvas.addEventListener('mouseout', stopDrawing);
+canvas.addEventListener('dblclick', editText);
 
 // タッチイベント（スマホ対応）
 canvas.addEventListener('touchstart', handleTouchStart);
@@ -220,9 +273,79 @@ function getMousePos(e) {
     };
 }
 
+// テキストがクリックされたかチェック
+function getClickedTextIndex(x, y) {
+    for (let i = textObjects.length - 1; i >= 0; i--) {
+        const textObj = textObjects[i];
+        ctx.font = `${textObj.fontSize}px Arial`;
+        const metrics = ctx.measureText(textObj.text);
+        const textWidth = metrics.width;
+        const textHeight = textObj.fontSize;
+
+        // テキストの範囲をチェック（少し広めの範囲）
+        if (x >= textObj.x - 5 && x <= textObj.x + textWidth + 5 &&
+            y >= textObj.y - textHeight && y <= textObj.y + 10) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// テキストを編集（ダブルクリック時）
+function editText(e) {
+    if (currentTool !== 'text' || !imageLoaded) return;
+
+    const pos = getMousePos(e);
+    const clickedIndex = getClickedTextIndex(pos.x, pos.y);
+
+    if (clickedIndex !== -1) {
+        // 既存のテキストを編集
+        selectedTextIndex = clickedIndex;
+        const textObj = textObjects[clickedIndex];
+
+        // ダイアログを表示し、既存のテキストを設定
+        textInput.value = textObj.text;
+        fontSize = textObj.fontSize;
+        currentColor = textObj.color;
+
+        // UIを更新
+        fontSizeSlider.value = fontSize;
+        fontSizeValue.textContent = fontSize;
+        colorPicker.value = currentColor;
+
+        // 編集モードとして位置を保持
+        pendingTextPos = { x: textObj.x, y: textObj.y, editingIndex: clickedIndex };
+
+        textInputDialog.classList.add('show');
+        textInput.focus();
+        textInput.select();
+    }
+}
+
 function startDrawing(e) {
+    const pos = getMousePos(e);
+
     if (currentTool === 'text') {
-        addText(e);
+        // テキストツールの場合
+        if (!imageLoaded) {
+            showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+            return;
+        }
+
+        // クリックされた位置のテキストをチェック
+        const clickedIndex = getClickedTextIndex(pos.x, pos.y);
+
+        if (clickedIndex !== -1) {
+            // 既存のテキストをクリック - 編集モード
+            selectedTextIndex = clickedIndex;
+            isDraggingText = true;
+            dragStartX = pos.x;
+            dragStartY = pos.y;
+            redrawCanvas();
+        } else {
+            // 新しいテキストを追加
+            addText(e);
+        }
         return;
     }
 
@@ -232,33 +355,56 @@ function startDrawing(e) {
         return;
     }
 
+    // テキスト選択を解除
+    if (selectedTextIndex !== -1) {
+        selectedTextIndex = -1;
+        redrawCanvas();
+    }
+
     isDrawing = true;
-    const pos = getMousePos(e);
     lastX = pos.x;
     lastY = pos.y;
 }
 
 function draw(e) {
+    const pos = getMousePos(e);
+
+    // テキストをドラッグ中
+    if (isDraggingText && selectedTextIndex !== -1) {
+        const dx = pos.x - dragStartX;
+        const dy = pos.y - dragStartY;
+
+        textObjects[selectedTextIndex].x += dx;
+        textObjects[selectedTextIndex].y += dy;
+
+        dragStartX = pos.x;
+        dragStartY = pos.y;
+
+        redrawCanvas();
+        return;
+    }
+
     if (!isDrawing) return;
     if (currentTool === 'text') return;
 
-    const pos = getMousePos(e);
+    const pos2 = getMousePos(e);
 
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
-    ctx.lineTo(pos.x, pos.y);
+    ctx.lineTo(pos2.x, pos2.y);
     ctx.strokeStyle = currentTool === 'eraser' ? 'white' : currentColor;
     ctx.lineWidth = brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
 
-    lastX = pos.x;
-    lastY = pos.y;
+    lastX = pos2.x;
+    lastY = pos2.y;
 }
 
 function stopDrawing() {
     isDrawing = false;
+    isDraggingText = false;
 }
 
 // テキスト追加
@@ -285,10 +431,30 @@ textOkBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
 
     if (text && pendingTextPos) {
-        ctx.font = `${fontSize}px Arial`;
-        ctx.fillStyle = currentColor;
-        ctx.fillText(text, pendingTextPos.x, pendingTextPos.y);
-        showNotification('テキストを追加しました', 'success');
+        if (pendingTextPos.editingIndex !== undefined) {
+            // 既存のテキストを更新
+            textObjects[pendingTextPos.editingIndex] = {
+                text: text,
+                x: pendingTextPos.x,
+                y: pendingTextPos.y,
+                fontSize: fontSize,
+                color: currentColor
+            };
+            showNotification('テキストを更新しました', 'success');
+        } else {
+            // 新しいテキストを追加
+            textObjects.push({
+                text: text,
+                x: pendingTextPos.x,
+                y: pendingTextPos.y,
+                fontSize: fontSize,
+                color: currentColor
+            });
+            showNotification('テキストを追加しました', 'success');
+        }
+
+        // キャンバスを再描画
+        redrawCanvas();
     }
 
     // ダイアログを閉じる
@@ -369,6 +535,9 @@ clearBtn.addEventListener('click', () => {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         imageLoaded = false;
+        baseImage = null;
+        textObjects = [];
+        selectedTextIndex = -1;
         dropHint.classList.remove('hidden');
         showNotification('キャンバスをクリアしました', 'info');
     }
@@ -382,6 +551,15 @@ document.addEventListener('keydown', (e) => {
         saveBtn.click();
     }
 
+    // Deleteキーで選択中のテキストを削除
+    if (e.key === 'Delete' && selectedTextIndex !== -1 && currentTool === 'text') {
+        e.preventDefault();
+        textObjects.splice(selectedTextIndex, 1);
+        selectedTextIndex = -1;
+        redrawCanvas();
+        showNotification('テキストを削除しました', 'success');
+    }
+
     // Ctrl+Z で元に戻す（簡易版）
     if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
@@ -392,4 +570,5 @@ document.addEventListener('keydown', (e) => {
 console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
+console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
 showNotification('画像エディターへようこそ！', 'info');
