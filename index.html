@@ -38,16 +38,46 @@
             </div>
 
             <div class="tool-group">
-                <h3>ツール</h3>
+                <h3>描画ツール</h3>
                 <button id="brushBtn" class="btn tool-btn active" data-tool="brush">ブラシ</button>
                 <button id="eraserBtn" class="btn tool-btn" data-tool="eraser">消しゴム</button>
                 <button id="textBtn" class="btn tool-btn" data-tool="text">テキスト</button>
             </div>
 
             <div class="tool-group">
-                <h3>色</h3>
-                <input type="color" id="colorPicker" value="#000000">
-                <label for="colorPicker">描画色</label>
+                <h3>図形ツール</h3>
+                <button id="rectangleBtn" class="btn tool-btn" data-tool="rectangle">矩形</button>
+                <button id="circleBtn" class="btn tool-btn" data-tool="circle">円</button>
+                <button id="lineBtn" class="btn tool-btn" data-tool="line">直線</button>
+                <button id="arrowBtn" class="btn tool-btn" data-tool="arrow">矢印</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>図形設定</h3>
+                <label>
+                    <input type="checkbox" id="fillShape" checked>
+                    塗りつぶし
+                </label>
+                <label>
+                    <input type="checkbox" id="strokeShape" checked>
+                    枠線
+                </label>
+            </div>
+
+            <div class="tool-group">
+                <h3>色設定</h3>
+                <div class="color-setting">
+                    <input type="color" id="colorPicker" value="#000000">
+                    <label for="colorPicker">描画色</label>
+                </div>
+                <div class="color-setting">
+                    <input type="color" id="fillColorPicker" value="#3498db">
+                    <label for="fillColorPicker">塗りつぶし色</label>
+                </div>
+                <div class="color-setting">
+                    <input type="color" id="strokeColorPicker" value="#000000">
+                    <label for="strokeColorPicker">枠線色</label>
+                </div>
             </div>
 
             <div class="tool-group">
@@ -83,7 +113,17 @@
                         <li>「📋 ペースト」ボタンをクリック（クリップボードから）</li>
                     </ul>
                 </li>
-                <li><strong>編集：</strong> ツールを選択して、キャンバス上で描画またはテキストを追加</li>
+                <li><strong>描画ツール：</strong> ブラシ・消しゴムを選択して、キャンバス上で自由に描画</li>
+                <li><strong>図形描画：</strong>
+                    <ul>
+                        <li>図形ツール（矩形・円・直線・矢印）を選択</li>
+                        <li>ドラッグで図形を描画（リアルタイムプレビュー表示）</li>
+                        <li>図形をクリックで選択（ハンドルが表示されます）</li>
+                        <li>選択した図形をドラッグで移動</li>
+                        <li>ハンドルをドラッグでサイズ変更</li>
+                        <li>Deleteキーで選択した図形を削除</li>
+                    </ul>
+                </li>
                 <li><strong>テキスト編集：</strong>
                     <ul>
                         <li>クリックで新規テキスト追加</li>
