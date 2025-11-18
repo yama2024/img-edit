@@ -41,6 +41,9 @@ const textInputDialog = document.getElementById('textInputDialog');
 const textInput = document.getElementById('textInput');
 const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
+const dialogFontSize = document.getElementById('dialogFontSize');
+const dialogFontSizeValue = document.getElementById('dialogFontSizeValue');
+const dialogColorPicker = document.getElementById('dialogColorPicker');
 
 // 初期化
 function init() {
@@ -91,6 +94,11 @@ brushSizeSlider.addEventListener('input', (e) => {
 fontSizeSlider.addEventListener('input', (e) => {
     fontSize = e.target.value;
     fontSizeValue.textContent = fontSize;
+});
+
+// ダイアログ内のフォントサイズスライダー
+dialogFontSize.addEventListener('input', (e) => {
+    dialogFontSizeValue.textContent = e.target.value;
 });
 
 // 画像アップロード
@@ -303,15 +311,13 @@ function editText(e) {
         selectedTextIndex = clickedIndex;
         const textObj = textObjects[clickedIndex];
 
-        // ダイアログを表示し、既存のテキストを設定
+        // ダイアログを表示し、既存のテキストとスタイルを設定
         textInput.value = textObj.text;
-        fontSize = textObj.fontSize;
-        currentColor = textObj.color;
 
-        // UIを更新
-        fontSizeSlider.value = fontSize;
-        fontSizeValue.textContent = fontSize;
-        colorPicker.value = currentColor;
+        // ダイアログ内のフォントサイズと色を設定
+        dialogFontSize.value = textObj.fontSize;
+        dialogFontSizeValue.textContent = textObj.fontSize;
+        dialogColorPicker.value = textObj.color;
 
         // 編集モードとして位置を保持
         pendingTextPos = { x: textObj.x, y: textObj.y, editingIndex: clickedIndex };
@@ -420,9 +426,13 @@ function addText(e) {
     const pos = getMousePos(e);
     pendingTextPos = pos;
 
-    // ダイアログを表示
-    textInputDialog.classList.add('show');
+    // ダイアログを表示し、現在の設定を反映
     textInput.value = '';
+    dialogFontSize.value = fontSize;
+    dialogFontSizeValue.textContent = fontSize;
+    dialogColorPicker.value = currentColor;
+
+    textInputDialog.classList.add('show');
     textInput.focus();
 }
 
@@ -431,14 +441,18 @@ textOkBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
 
     if (text && pendingTextPos) {
+        // ダイアログ内の値を取得
+        const dialogFontSizeVal = parseInt(dialogFontSize.value);
+        const dialogColorVal = dialogColorPicker.value;
+
         if (pendingTextPos.editingIndex !== undefined) {
             // 既存のテキストを更新
             textObjects[pendingTextPos.editingIndex] = {
                 text: text,
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
-                fontSize: fontSize,
-                color: currentColor
+                fontSize: dialogFontSizeVal,
+                color: dialogColorVal
             };
             showNotification('テキストを更新しました', 'success');
         } else {
@@ -447,11 +461,18 @@ textOkBtn.addEventListener('click', () => {
                 text: text,
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
-                fontSize: fontSize,
-                color: currentColor
+                fontSize: dialogFontSizeVal,
+                color: dialogColorVal
             });
             showNotification('テキストを追加しました', 'success');
         }
+
+        // ツールバーの値も更新
+        fontSize = dialogFontSizeVal;
+        currentColor = dialogColorVal;
+        fontSizeSlider.value = fontSize;
+        fontSizeValue.textContent = fontSize;
+        colorPicker.value = currentColor;
 
         // キャンバスを再描画
         redrawCanvas();
