@@ -50,6 +50,8 @@ const textInput = document.getElementById('textInput');
 const fontFamilySelect = document.getElementById('fontFamily');
 const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
+const toggleInstructionsBtn = document.getElementById('toggleInstructions');
+const instructionsContent = document.getElementById('instructionsContent');
 
 // 初期化
 function init() {
@@ -189,6 +191,19 @@ undoBtn.addEventListener('click', () => {
 
 redoBtn.addEventListener('click', () => {
     redo();
+});
+
+// 使い方のトグル
+toggleInstructionsBtn.addEventListener('click', () => {
+    if (instructionsContent.classList.contains('hidden')) {
+        instructionsContent.classList.remove('hidden');
+        instructionsContent.classList.add('show');
+        toggleInstructionsBtn.textContent = '📖 使い方を非表示';
+    } else {
+        instructionsContent.classList.remove('show');
+        instructionsContent.classList.add('hidden');
+        toggleInstructionsBtn.textContent = '📖 使い方を表示';
+    }
 });
 
 // カスタムカーソルを更新

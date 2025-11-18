@@ -95,35 +95,40 @@
         </div>
 
         <div class="instructions">
-            <p><strong>使い方：</strong></p>
-            <ul>
-                <li><strong>画像を読み込む：</strong>
-                    <ul>
-                        <li>「📁 画像をアップロード」ボタンをクリック</li>
-                        <li>画像をキャンバスにドラッグ&ドロップ</li>
-                        <li>Ctrl+V (Mac: Cmd+V) でクリップボードから貼り付け</li>
-                        <li>「📋 ペースト」ボタンをクリック（クリップボードから）</li>
-                    </ul>
-                </li>
-                <li><strong>編集：</strong> ツールを選択して、キャンバス上で描画またはテキストを追加</li>
-                <li><strong>テキスト編集：</strong>
-                    <ul>
-                        <li>クリックで新規テキスト追加</li>
-                        <li>テキストをクリックで選択（枠が表示されます）</li>
-                        <li>選択したテキストをドラッグで移動</li>
-                        <li>ダブルクリックでテキスト内容を編集</li>
-                        <li>Deleteキーで選択したテキストを削除</li>
-                    </ul>
-                </li>
-                <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
-                <li><strong>元に戻す/やり直し：</strong>
-                    <ul>
-                        <li>Ctrl+Z (Mac: Cmd+Z) で元に戻す</li>
-                        <li>Ctrl+Y または Ctrl+Shift+Z (Mac: Cmd+Y または Cmd+Shift+Z) でやり直し</li>
-                        <li>最大50ステップまで履歴を保持</li>
-                    </ul>
-                </li>
-            </ul>
+            <button id="toggleInstructions" class="toggle-instructions-btn">
+                📖 使い方を表示
+            </button>
+            <div id="instructionsContent" class="instructions-content hidden">
+                <p><strong>使い方：</strong></p>
+                <ul>
+                    <li><strong>画像を読み込む：</strong>
+                        <ul>
+                            <li>「📁 画像をアップロード」ボタンをクリック</li>
+                            <li>画像をキャンバスにドラッグ&ドロップ</li>
+                            <li>Ctrl+V (Mac: Cmd+V) でクリップボードから貼り付け</li>
+                            <li>「📋 ペースト」ボタンをクリック（クリップボードから）</li>
+                        </ul>
+                    </li>
+                    <li><strong>編集：</strong> ツールを選択して、キャンバス上で描画またはテキストを追加</li>
+                    <li><strong>テキスト編集：</strong>
+                        <ul>
+                            <li>クリックで新規テキスト追加</li>
+                            <li>テキストをクリックで選択（枠が表示されます）</li>
+                            <li>選択したテキストをドラッグで移動</li>
+                            <li>ダブルクリックでテキスト内容を編集</li>
+                            <li>Deleteキーで選択したテキストを削除</li>
+                        </ul>
+                    </li>
+                    <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
+                    <li><strong>元に戻す/やり直し：</strong>
+                        <ul>
+                            <li>Ctrl+Z (Mac: Cmd+Z) で元に戻す</li>
+                            <li>Ctrl+Y または Ctrl+Shift+Z (Mac: Cmd+Y または Cmd+Shift+Z) でやり直し</li>
+                            <li>最大50ステップまで履歴を保持</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 
