@@ -109,12 +109,8 @@ const maintainAspectCheckbox = document.getElementById('maintainAspect');
 const resizeOkBtn = document.getElementById('resizeOkBtn');
 const resizeCancelBtn = document.getElementById('resizeCancelBtn');
 
-// 回転・反転用UI要素
+// 回転用UI要素
 const rotateCWBtn = document.getElementById('rotateCWBtn');
-const rotate180Btn = document.getElementById('rotate180Btn');
-const rotateCCWBtn = document.getElementById('rotateCCWBtn');
-const flipHBtn = document.getElementById('flipHBtn');
-const flipVBtn = document.getElementById('flipVBtn');
 
 // 初期化
 function init() {
@@ -1507,8 +1503,8 @@ newHeightInput.addEventListener('input', () => {
     }
 });
 
-// 回転処理
-function rotateCanvas(degrees) {
+// 回転処理（90度時計回り）
+function rotateCanvas() {
     if (!imageLoaded || !baseImage) {
         showNotification('先に画像をアップロードまたはペーストしてください', 'info');
         return;
@@ -1516,16 +1512,8 @@ function rotateCanvas(degrees) {
 
     const oldWidth = canvas.width;
     const oldHeight = canvas.height;
-    let newWidth, newHeight;
-
-    // 90度または270度の場合は幅と高さを入れ替え
-    if (degrees === 90 || degrees === 270) {
-        newWidth = oldHeight;
-        newHeight = oldWidth;
-    } else {
-        newWidth = oldWidth;
-        newHeight = oldHeight;
-    }
+    const newWidth = oldHeight;
+    const newHeight = oldWidth;
 
     // 一時キャンバスを作成して回転した画像を描画
     const tempCanvas = document.createElement('canvas');
@@ -1533,58 +1521,33 @@ function rotateCanvas(degrees) {
     tempCanvas.height = newHeight;
     const tempCtx = tempCanvas.getContext('2d');
 
-    // 回転の中心点を設定
+    // 回転の中心点を設定（90度時計回り）
     tempCtx.save();
     tempCtx.translate(newWidth / 2, newHeight / 2);
-    tempCtx.rotate((degrees * Math.PI) / 180);
+    tempCtx.rotate((90 * Math.PI) / 180);
     tempCtx.drawImage(baseImage, -oldWidth / 2, -oldHeight / 2, oldWidth, oldHeight);
     tempCtx.restore();
 
-    // テキストオブジェクトの座標を変換
+    // テキストオブジェクトの座標を変換（90度時計回り）
     textObjects.forEach(textObj => {
         const oldX = textObj.x;
         const oldY = textObj.y;
-
-        if (degrees === 90) {
-            // 90度時計回り: (x, y) → (oldHeight - y, x)
-            textObj.x = oldHeight - oldY;
-            textObj.y = oldX;
-        } else if (degrees === 180) {
-            // 180度: (x, y) → (oldWidth - x, oldHeight - y)
-            textObj.x = oldWidth - oldX;
-            textObj.y = oldHeight - oldY;
-        } else if (degrees === 270) {
-            // 270度時計回り(90度反時計回り): (x, y) → (y, oldWidth - x)
-            textObj.x = oldY;
-            textObj.y = oldWidth - oldX;
-        }
+        // 90度時計回り: (x, y) → (oldHeight - y, x)
+        textObj.x = oldHeight - oldY;
+        textObj.y = oldX;
     });
 
-    // 図形オブジェクトの座標を変換
+    // 図形オブジェクトの座標を変換（90度時計回り）
     shapeObjects.forEach(shape => {
         const oldX = shape.x;
         const oldY = shape.y;
         const oldW = shape.width;
         const oldH = shape.height;
-
-        if (degrees === 90) {
-            // 90度時計回り
-            shape.x = oldHeight - oldY - oldH;
-            shape.y = oldX;
-            shape.width = oldH;
-            shape.height = oldW;
-        } else if (degrees === 180) {
-            // 180度
-            shape.x = oldWidth - oldX - oldW;
-            shape.y = oldHeight - oldY - oldH;
-            // 幅と高さは変わらない
-        } else if (degrees === 270) {
-            // 270度時計回り
-            shape.x = oldY;
-            shape.y = oldWidth - oldX - oldW;
-            shape.width = oldH;
-            shape.height = oldW;
-        }
+        // 90度時計回り
+        shape.x = oldHeight - oldY - oldH;
+        shape.y = oldX;
+        shape.width = oldH;
+        shape.height = oldW;
     });
 
     // キャンバスサイズを更新
@@ -1597,80 +1560,13 @@ function rotateCanvas(degrees) {
         baseImage = newImg;
         redrawCanvas();
         captureState();
-        showNotification(`${degrees}度回転しました`, 'success');
+        showNotification('90度回転しました', 'success');
     };
     newImg.src = tempCanvas.toDataURL();
 }
 
-// 反転処理
-function flipCanvas(direction) {
-    if (!imageLoaded || !baseImage) {
-        showNotification('先に画像をアップロードまたはペーストしてください', 'info');
-        return;
-    }
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // 一時キャンバスを作成して反転した画像を描画
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const tempCtx = tempCanvas.getContext('2d');
-
-    tempCtx.save();
-    if (direction === 'horizontal') {
-        // 水平反転
-        tempCtx.translate(width, 0);
-        tempCtx.scale(-1, 1);
-    } else if (direction === 'vertical') {
-        // 垂直反転
-        tempCtx.translate(0, height);
-        tempCtx.scale(1, -1);
-    }
-    tempCtx.drawImage(baseImage, 0, 0);
-    tempCtx.restore();
-
-    // テキストオブジェクトの座標を変換
-    textObjects.forEach(textObj => {
-        if (direction === 'horizontal') {
-            // 水平反転: x座標を反転
-            textObj.x = width - textObj.x;
-        } else if (direction === 'vertical') {
-            // 垂直反転: y座標を反転
-            textObj.y = height - textObj.y;
-        }
-    });
-
-    // 図形オブジェクトの座標を変換
-    shapeObjects.forEach(shape => {
-        if (direction === 'horizontal') {
-            // 水平反転: x座標を反転
-            shape.x = width - shape.x - shape.width;
-        } else if (direction === 'vertical') {
-            // 垂直反転: y座標を反転
-            shape.y = height - shape.y - shape.height;
-        }
-    });
-
-    // ベース画像を更新
-    const newImg = new Image();
-    newImg.onload = () => {
-        baseImage = newImg;
-        redrawCanvas();
-        captureState();
-        const directionText = direction === 'horizontal' ? '水平' : '垂直';
-        showNotification(`${directionText}反転しました`, 'success');
-    };
-    newImg.src = tempCanvas.toDataURL();
-}
-
-// 回転・反転ボタンのイベントリスナー
-rotateCWBtn.addEventListener('click', () => rotateCanvas(90));
-rotate180Btn.addEventListener('click', () => rotateCanvas(180));
-rotateCCWBtn.addEventListener('click', () => rotateCanvas(270));
-flipHBtn.addEventListener('click', () => flipCanvas('horizontal'));
-flipVBtn.addEventListener('click', () => flipCanvas('vertical'));
+// 回転ボタンのイベントリスナー
+rotateCWBtn.addEventListener('click', rotateCanvas);
 
 // ショートカットキー
 document.addEventListener('keydown', (e) => {
@@ -1740,6 +1636,20 @@ shadowColorPicker.addEventListener('input', updateTextPreview);
 strokeTextColorPicker.addEventListener('input', updateTextPreview);
 bgColorPicker.addEventListener('input', updateTextPreview);
 
+// 使い方トグル機能
+const toggleInstructionsBtn = document.getElementById('toggleInstructionsBtn');
+const instructionsContent = document.getElementById('instructionsContent');
+
+toggleInstructionsBtn.addEventListener('click', () => {
+    if (instructionsContent.style.display === 'none') {
+        instructionsContent.style.display = 'block';
+        toggleInstructionsBtn.textContent = '📖 使い方を非表示';
+    } else {
+        instructionsContent.style.display = 'none';
+        toggleInstructionsBtn.textContent = '📖 使い方を表示';
+    }
+});
+
 console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
@@ -1747,4 +1657,3 @@ console.log('✏️ テキストツール: クリックで追加、ダブルク�
 console.log('📐 図形ツール: ドラッグで描画、クリックで選択、ハンドルでサイズ変更、Deleteキーで削除');
 console.log('■ 正方形ツール: 縦横比1:1の四角形を描画');
 console.log('↶ 元に戻す: Ctrl+Z');
-showNotification('画像エディターへようこそ！', 'info');
