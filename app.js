@@ -29,6 +29,10 @@ const toolButtons = document.querySelectorAll('.tool-btn');
 const dropZone = document.getElementById('dropZone');
 const dropHint = document.getElementById('dropHint');
 const notification = document.getElementById('notification');
+const textInputDialog = document.getElementById('textInputDialog');
+const textInput = document.getElementById('textInput');
+const textOkBtn = document.getElementById('textOkBtn');
+const textCancelBtn = document.getElementById('textCancelBtn');
 
 // 初期化
 function init() {
@@ -252,16 +256,64 @@ function stopDrawing() {
 }
 
 // テキスト追加
+let pendingTextPos = null;
+
 function addText(e) {
     const pos = getMousePos(e);
-    const text = prompt('テキストを入力してください:');
+    pendingTextPos = pos;
 
-    if (text && text.trim() !== '') {
+    // ダイアログを表示
+    textInputDialog.classList.remove('hidden');
+    textInput.value = '';
+    textInput.focus();
+}
+
+// テキスト入力のOKボタン
+textOkBtn.addEventListener('click', () => {
+    const text = textInput.value.trim();
+
+    if (text && pendingTextPos) {
         ctx.font = `${fontSize}px Arial`;
         ctx.fillStyle = currentColor;
-        ctx.fillText(text, pos.x, pos.y);
+        ctx.fillText(text, pendingTextPos.x, pendingTextPos.y);
+        showNotification('テキストを追加しました', 'success');
     }
-}
+
+    // ダイアログを閉じる
+    textInputDialog.classList.add('hidden');
+    textInput.value = '';
+    pendingTextPos = null;
+});
+
+// テキスト入力のキャンセルボタン
+textCancelBtn.addEventListener('click', () => {
+    textInputDialog.classList.add('hidden');
+    textInput.value = '';
+    pendingTextPos = null;
+});
+
+// Enterキーでテキスト追加
+textInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        textOkBtn.click();
+    }
+});
+
+// Escapeキーでキャンセル
+textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        textCancelBtn.click();
+    }
+});
+
+// ダイアログの背景クリックで閉じる
+textInputDialog.addEventListener('click', (e) => {
+    if (e.target === textInputDialog) {
+        textCancelBtn.click();
+    }
+});
 
 // タッチイベントハンドラー
 function handleTouchStart(e) {

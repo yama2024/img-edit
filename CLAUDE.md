@@ -41,7 +41,9 @@ img-edit/
 - **線の太さ調整**: `app.js:71-74` - スライダーで1-50px調整
 
 ### 3. テキスト入力
-- **テキスト追加**: `app.js:256-265` - クリック位置にテキストを配置
+- **テキスト追加**: `app.js:261-309` - クリック位置にテキストを配置
+- **テキスト入力ダイアログ**: `index.html:19-28` - モダンなUI/UXのテキスト入力
+- **キーボードショートカット**: Enterで確定、Escapeでキャンセル
 - **フォントサイズ**: `app.js:77-80` - 10-100pxで調整可能
 
 ### 4. 保存・管理
@@ -50,9 +52,11 @@ img-edit/
 
 ### 5. UI/UXの改善
 - **通知システム**: `app.js:42-49` - 操作の成功/失敗をリアルタイムで表示
+- **テキスト入力ダイアログ**: `style.css:201-262` - モダンなモーダルダイアログ
 - **ドラッグビジュアル**: `style.css:134-137` - ドラッグ中の視覚フィードバック
 - **ドロップヒント**: `index.html:55-59` - 画像読み込み方法のガイド表示
 - **エラーハンドリング**: ファイル読み込み失敗時の適切なメッセージ表示
+- **キーボードショートカット**: Enter/Escapeでダイアログ操作
 
 ## コードの重要な部分
 
@@ -130,6 +134,32 @@ function getMousePos(e) {
 }
 ```
 
+### テキスト入力ダイアログ
+```javascript
+// app.js:261-316
+function addText(e) {
+    const pos = getMousePos(e);
+    pendingTextPos = pos;
+
+    // ダイアログを表示
+    textInputDialog.classList.remove('hidden');
+    textInput.value = '';
+    textInput.focus();
+}
+
+// OKボタンでテキストを描画
+textOkBtn.addEventListener('click', () => {
+    const text = textInput.value.trim();
+    if (text && pendingTextPos) {
+        ctx.font = `${fontSize}px Arial`;
+        ctx.fillStyle = currentColor;
+        ctx.fillText(text, pendingTextPos.x, pendingTextPos.y);
+        showNotification('テキストを追加しました', 'success');
+    }
+    textInputDialog.classList.add('hidden');
+});
+```
+
 ## UI/UX設計
 
 ### カラースキーム
@@ -201,7 +231,7 @@ Ctrl+V で画像を貼り付けることができます
 3. **描画ツールのテスト**
    - ブラシで描画
    - 消しゴムで消去
-   - テキスト追加
+   - テキスト追加（ダイアログが表示され、Enterで確定、Escapeでキャンセル）
 4. **保存・クリア機能のテスト**
    - 保存ボタンで画像をダウンロード
    - クリア機能でリセット
