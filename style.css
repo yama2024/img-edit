@@ -107,6 +107,30 @@ header h1 {
     background: #5568d3;
 }
 
+.btn-edit {
+    background: #3498db;
+}
+
+.btn-edit:hover:not(:disabled) {
+    background: #2980b9;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.btn:disabled {
+    background: #bdc3c7;
+    color: #7f8c8d;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn:disabled:hover {
+    background: #bdc3c7;
+    transform: none;
+    box-shadow: none;
+}
+
 #colorPicker {
     width: 60px;
     height: 40px;
@@ -242,6 +266,35 @@ input[type="range"] {
 }
 
 .text-input-content input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.text-input-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.text-input-option label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.font-select {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.font-select:focus {
     outline: none;
     border-color: #667eea;
 }

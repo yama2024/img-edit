@@ -17,6 +17,7 @@ let baseCanvas = null; // 元の画像とブラシ描画を保持
 let isDraggingText = false;
 let dragStartX = 0;
 let dragStartY = 0;
+let currentFontFamily = 'Arial'; // 現在のフォント
 
 // 履歴管理（Undo/Redo用）
 let history = [];
@@ -33,6 +34,8 @@ const uploadBtn = document.getElementById('uploadBtn');
 const pasteBtn = document.getElementById('pasteBtn');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
@@ -44,6 +47,7 @@ const dropHint = document.getElementById('dropHint');
 const notification = document.getElementById('notification');
 const textInputDialog = document.getElementById('textInputDialog');
 const textInput = document.getElementById('textInput');
+const fontFamilySelect = document.getElementById('fontFamily');
 const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
 
@@ -54,6 +58,23 @@ function init() {
 }
 
 init();
+
+// Undo/Redoボタンの状態を更新
+function updateUndoRedoButtons() {
+    // Undoボタン
+    if (historyIndex > 0) {
+        undoBtn.disabled = false;
+    } else {
+        undoBtn.disabled = true;
+    }
+
+    // Redoボタン
+    if (historyIndex < history.length - 1) {
+        redoBtn.disabled = false;
+    } else {
+        redoBtn.disabled = true;
+    }
+}
 
 // 履歴に状態を保存
 function saveHistory() {
@@ -80,6 +101,9 @@ function saveHistory() {
     } else {
         historyIndex++;
     }
+
+    // ボタンの状態を更新
+    updateUndoRedoButtons();
 }
 
 // 履歴から状態を復元
@@ -117,6 +141,9 @@ function restoreHistory(index) {
     }
 
     historyIndex = index;
+
+    // ボタンの状態を更新
+    updateUndoRedoButtons();
 }
 
 // 元に戻す (Undo)
@@ -152,6 +179,48 @@ function showNotification(message, type = 'info') {
 // 初期状態を履歴に保存
 saveHistory();
 
+// 初期カーソルを設定
+updateCursor();
+
+// Undo/Redoボタン
+undoBtn.addEventListener('click', () => {
+    undo();
+});
+
+redoBtn.addEventListener('click', () => {
+    redo();
+});
+
+// カスタムカーソルを更新
+function updateCursor() {
+    if (currentTool === 'text') {
+        canvas.style.cursor = 'text';
+    } else if (currentTool === 'brush' || currentTool === 'eraser') {
+        // ブラシサイズに応じた円形カーソルを作成
+        const cursorSize = Math.min(Math.max(brushSize * 2, 16), 64); // 16-64pxの範囲
+        const cursorCanvas = document.createElement('canvas');
+        cursorCanvas.width = cursorSize;
+        cursorCanvas.height = cursorSize;
+        const cursorCtx = cursorCanvas.getContext('2d');
+
+        // 円を描画
+        cursorCtx.beginPath();
+        cursorCtx.arc(cursorSize / 2, cursorSize / 2, brushSize / 2, 0, Math.PI * 2);
+        cursorCtx.strokeStyle = currentTool === 'eraser' ? '#ff0000' : '#000000';
+        cursorCtx.lineWidth = 1;
+        cursorCtx.stroke();
+
+        // 中心点を描画
+        cursorCtx.fillStyle = currentTool === 'eraser' ? '#ff0000' : '#000000';
+        cursorCtx.fillRect(cursorSize / 2 - 1, cursorSize / 2 - 1, 2, 2);
+
+        const cursorUrl = cursorCanvas.toDataURL();
+        canvas.style.cursor = `url(${cursorUrl}) ${cursorSize / 2} ${cursorSize / 2}, crosshair`;
+    } else {
+        canvas.style.cursor = 'crosshair';
+    }
+}
+
 // ツール選択
 toolButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -159,12 +228,8 @@ toolButtons.forEach(btn => {
         btn.classList.add('active');
         currentTool = btn.dataset.tool;
 
-        // ツールに応じたカーソルを設定
-        if (currentTool === 'text') {
-            canvas.style.cursor = 'text';
-        } else {
-            canvas.style.cursor = 'crosshair';
-        }
+        // カーソルを更新
+        updateCursor();
     });
 });
 
@@ -177,12 +242,19 @@ colorPicker.addEventListener('change', (e) => {
 brushSizeSlider.addEventListener('input', (e) => {
     brushSize = e.target.value;
     brushSizeValue.textContent = brushSize;
+    // カーソルを更新
+    updateCursor();
 });
 
 // フォントサイズ
 fontSizeSlider.addEventListener('input', (e) => {
     fontSize = e.target.value;
     fontSizeValue.textContent = fontSize;
+});
+
+// フォント選択
+fontFamilySelect.addEventListener('change', (e) => {
+    currentFontFamily = e.target.value;
 });
 
 // 画像アップロード
@@ -212,12 +284,13 @@ function redrawCanvas() {
 
     // すべてのテキストを描画
     textObjects.forEach((textObj, index) => {
-        ctx.font = `${textObj.fontSize}px Arial`;
+        ctx.font = `${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
         ctx.fillStyle = textObj.color;
         ctx.fillText(textObj.text, textObj.x, textObj.y);
 
         // 選択中のテキストには枠を表示
         if (index === selectedTextIndex) {
+            ctx.font = `${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`; // フォント再設定
             const metrics = ctx.measureText(textObj.text);
             const textWidth = metrics.width;
             const textHeight = textObj.fontSize;
@@ -376,7 +449,7 @@ function getMousePos(e) {
 function getClickedTextIndex(x, y) {
     for (let i = textObjects.length - 1; i >= 0; i--) {
         const textObj = textObjects[i];
-        ctx.font = `${textObj.fontSize}px Arial`;
+        ctx.font = `${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
         const metrics = ctx.measureText(textObj.text);
         const textWidth = metrics.width;
         const textHeight = textObj.fontSize;
@@ -406,11 +479,13 @@ function editText(e) {
         textInput.value = textObj.text;
         fontSize = textObj.fontSize;
         currentColor = textObj.color;
+        currentFontFamily = textObj.fontFamily || 'Arial';
 
         // UIを更新
         fontSizeSlider.value = fontSize;
         fontSizeValue.textContent = fontSize;
         colorPicker.value = currentColor;
+        fontFamilySelect.value = currentFontFamily;
 
         // 編集モードとして位置を保持
         pendingTextPos = { x: textObj.x, y: textObj.y, editingIndex: clickedIndex };
@@ -551,7 +626,14 @@ function addText(e) {
 textOkBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
 
-    if (text && pendingTextPos) {
+    // 空文字チェック
+    if (!text) {
+        showNotification('テキストを入力してください', 'error');
+        textInput.focus();
+        return;
+    }
+
+    if (pendingTextPos) {
         if (pendingTextPos.editingIndex !== undefined) {
             // 既存のテキストを更新
             textObjects[pendingTextPos.editingIndex] = {
@@ -559,7 +641,8 @@ textOkBtn.addEventListener('click', () => {
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
                 fontSize: fontSize,
-                color: currentColor
+                color: currentColor,
+                fontFamily: currentFontFamily
             };
             showNotification('テキストを更新しました', 'success');
         } else {
@@ -569,7 +652,8 @@ textOkBtn.addEventListener('click', () => {
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
                 fontSize: fontSize,
-                color: currentColor
+                color: currentColor,
+                fontFamily: currentFontFamily
             });
             showNotification('テキストを追加しました', 'success');
         }

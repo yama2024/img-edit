@@ -20,6 +20,22 @@
             <div class="text-input-content">
                 <h3>テキストを入力</h3>
                 <input type="text" id="textInput" placeholder="ここにテキストを入力..." maxlength="100">
+                <div class="text-input-option">
+                    <label for="fontFamily">フォント:</label>
+                    <select id="fontFamily" class="font-select">
+                        <option value="Arial">Arial</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                        <option value="Impact">Impact</option>
+                        <option value="メイリオ">メイリオ</option>
+                        <option value="游ゴシック">游ゴシック</option>
+                        <option value="ヒラギノ角ゴ Pro">ヒラギノ角ゴ Pro</option>
+                    </select>
+                </div>
                 <div class="text-input-buttons">
                     <button id="textOkBtn" class="btn">OK</button>
                     <button id="textCancelBtn" class="btn btn-secondary">キャンセル</button>
@@ -42,6 +58,12 @@
                 <button id="brushBtn" class="btn tool-btn active" data-tool="brush">ブラシ</button>
                 <button id="eraserBtn" class="btn tool-btn" data-tool="eraser">消しゴム</button>
                 <button id="textBtn" class="btn tool-btn" data-tool="text">テキスト</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>編集</h3>
+                <button id="undoBtn" class="btn btn-edit" disabled>↶ 元に戻す</button>
+                <button id="redoBtn" class="btn btn-edit" disabled>↷ やり直し</button>
             </div>
 
             <div class="tool-group">
