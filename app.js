@@ -17,6 +17,7 @@ canvas.height = 600;
 // UI要素の取得
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
+const pasteBtn = document.getElementById('pasteBtn');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const colorPicker = document.getElementById('colorPicker');
@@ -25,6 +26,9 @@ const brushSizeValue = document.getElementById('brushSizeValue');
 const fontSizeSlider = document.getElementById('fontSize');
 const fontSizeValue = document.getElementById('fontSizeValue');
 const toolButtons = document.querySelectorAll('.tool-btn');
+const dropZone = document.getElementById('dropZone');
+const dropHint = document.getElementById('dropHint');
+const notification = document.getElementById('notification');
 
 // 初期化
 function init() {
@@ -33,6 +37,16 @@ function init() {
 }
 
 init();
+
+// 通知を表示
+function showNotification(message, type = 'info') {
+    notification.textContent = message;
+    notification.className = `notification ${type} show`;
+
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
 
 // ツール選択
 toolButtons.forEach(btn => {
@@ -81,6 +95,11 @@ fileInput.addEventListener('change', (e) => {
 
 // 画像ファイルを読み込む
 function loadImageFromFile(file) {
+    if (!file || !file.type.match('image.*')) {
+        showNotification('有効な画像ファイルを選択してください', 'error');
+        return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
@@ -90,8 +109,19 @@ function loadImageFromFile(file) {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
             imageLoaded = true;
+
+            // ドロップヒントを非表示
+            dropHint.classList.add('hidden');
+
+            showNotification('画像を読み込みました！', 'success');
+        };
+        img.onerror = () => {
+            showNotification('画像の読み込みに失敗しました', 'error');
         };
         img.src = e.target.result;
+    };
+    reader.onerror = () => {
+        showNotification('ファイルの読み込みに失敗しました', 'error');
     };
     reader.readAsDataURL(file);
 }
@@ -99,12 +129,68 @@ function loadImageFromFile(file) {
 // 画像のペースト（Ctrl+V）
 document.addEventListener('paste', (e) => {
     const items = e.clipboardData.items;
+    let hasImage = false;
+
     for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
             const blob = items[i].getAsFile();
             loadImageFromFile(blob);
             e.preventDefault();
+            hasImage = true;
+            break;
         }
+    }
+
+    if (!hasImage && e.clipboardData.items.length > 0) {
+        showNotification('クリップボードに画像がありません', 'info');
+    }
+});
+
+// ペーストボタン
+pasteBtn.addEventListener('click', async () => {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        let hasImage = false;
+
+        for (const clipboardItem of clipboardItems) {
+            for (const type of clipboardItem.types) {
+                if (type.startsWith('image/')) {
+                    const blob = await clipboardItem.getType(type);
+                    loadImageFromFile(blob);
+                    hasImage = true;
+                    break;
+                }
+            }
+            if (hasImage) break;
+        }
+
+        if (!hasImage) {
+            showNotification('クリップボードに画像がありません', 'info');
+        }
+    } catch (err) {
+        console.error('クリップボードアクセスエラー:', err);
+        showNotification('Ctrl+V を使用して画像を貼り付けてください', 'info');
+    }
+});
+
+// ドラッグ&ドロップ機能
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        loadImageFromFile(files[0]);
     }
 });
 
@@ -200,10 +286,17 @@ function handleTouchMove(e) {
 
 // 画像を保存
 saveBtn.addEventListener('click', () => {
-    const link = document.createElement('a');
-    link.download = 'edited-image.png';
-    link.href = canvas.toDataURL();
-    link.click();
+    try {
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = `edited-image-${timestamp}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+        showNotification('画像を保存しました！', 'success');
+    } catch (err) {
+        console.error('保存エラー:', err);
+        showNotification('画像の保存に失敗しました', 'error');
+    }
 });
 
 // キャンバスをクリア
@@ -212,6 +305,8 @@ clearBtn.addEventListener('click', () => {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         imageLoaded = false;
+        dropHint.classList.remove('hidden');
+        showNotification('キャンバスをクリアしました', 'info');
     }
 });
 
@@ -230,5 +325,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-console.log('画像エディターが読み込まれました！');
-console.log('Ctrl+V で画像を貼り付けることができます');
+console.log('🎨 画像エディターが読み込まれました！');
+console.log('📋 Ctrl+V で画像を貼り付けることができます');
+console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
+showNotification('画像エディターへようこそ！', 'info');

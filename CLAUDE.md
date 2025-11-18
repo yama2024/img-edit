@@ -28,38 +28,97 @@ img-edit/
 
 ## 主要機能
 
-### 1. 画像読み込み
-- **ファイルアップロード**: `index.html:25` の input要素で画像ファイルを選択
-- **ペースト機能**: `app.js:97-108` でクリップボードからの画像貼り付けを処理
+### 1. 画像読み込み（4つの方法）
+- **ファイルアップロード**: `index.html:21` の input要素で画像ファイルを選択
+- **ペースト機能（Ctrl+V）**: `app.js:130-147` でクリップボードからの画像貼り付けを処理
+- **ペーストボタン**: `app.js:150-174` でClipboard APIを使用してクリップボードから読み込み
+- **ドラッグ&ドロップ**: `app.js:177-195` でファイルのドラッグ&ドロップを処理
 
 ### 2. 描画ツール
-- **ブラシツール**: `app.js:144-160` - 自由描画
-- **消しゴムツール**: `app.js:144-160` - 白色で上書き消去
-- **色選択**: `app.js:60-62` - カラーピッカーで色を変更
-- **線の太さ調整**: `app.js:64-67` - スライダーで1-50px調整
+- **ブラシツール**: `app.js:235-251` - 自由描画
+- **消しゴムツール**: `app.js:235-251` - 白色で上書き消去
+- **色選択**: `app.js:66-68` - カラーピッカーで色を変更
+- **線の太さ調整**: `app.js:71-74` - スライダーで1-50px調整
 
 ### 3. テキスト入力
-- **テキスト追加**: `app.js:165-174` - クリック位置にテキストを配置
-- **フォントサイズ**: `app.js:69-72` - 10-100pxで調整可能
+- **テキスト追加**: `app.js:256-265` - クリック位置にテキストを配置
+- **フォントサイズ**: `app.js:77-80` - 10-100pxで調整可能
 
 ### 4. 保存・管理
-- **画像保存**: `app.js:192-197` - PNG形式でダウンロード
-- **クリア機能**: `app.js:200-206` - キャンバスを白色でリセット
+- **画像保存**: `app.js:288-300` - PNG形式でタイムスタンプ付きダウンロード
+- **クリア機能**: `app.js:303-311` - キャンバスを白色でリセット
+
+### 5. UI/UXの改善
+- **通知システム**: `app.js:42-49` - 操作の成功/失敗をリアルタイムで表示
+- **ドラッグビジュアル**: `style.css:134-137` - ドラッグ中の視覚フィードバック
+- **ドロップヒント**: `index.html:55-59` - 画像読み込み方法のガイド表示
+- **エラーハンドリング**: ファイル読み込み失敗時の適切なメッセージ表示
 
 ## コードの重要な部分
 
 ### キャンバス初期化
 ```javascript
-// app.js:1-10
+// app.js:1-15
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 ```
 
+### 通知システム
+```javascript
+// app.js:42-49
+function showNotification(message, type = 'info') {
+    notification.textContent = message;
+    notification.className = `notification ${type} show`;
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+```
+
+### ドラッグ&ドロップ処理
+```javascript
+// app.js:177-195
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        loadImageFromFile(files[0]);
+    }
+});
+```
+
+### Clipboard API（ペーストボタン）
+```javascript
+// app.js:150-174
+pasteBtn.addEventListener('click', async () => {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const clipboardItem of clipboardItems) {
+            for (const type of clipboardItem.types) {
+                if (type.startsWith('image/')) {
+                    const blob = await clipboardItem.getType(type);
+                    loadImageFromFile(blob);
+                    break;
+                }
+            }
+        }
+    } catch (err) {
+        showNotification('Ctrl+V を使用して画像を貼り付けてください', 'info');
+    }
+});
+```
+
 ### 座標計算（レスポンシブ対応）
 ```javascript
-// app.js:122-130
+// app.js:213-221
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -68,20 +127,6 @@ function getMousePos(e) {
         x: (e.clientX - rect.left) * scaleX,
         y: (e.clientY - rect.top) * scaleY
     };
-}
-```
-
-### 描画処理
-```javascript
-// app.js:144-160
-function draw(e) {
-    // Canvas APIを使用した線描画
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = currentTool === 'eraser' ? 'white' : currentColor;
-    ctx.lineWidth = brushSize;
-    ctx.stroke();
 }
 ```
 
@@ -137,18 +182,31 @@ Ctrl+V で画像を貼り付けることができます
 
 ## 環境要件
 
-- モダンブラウザ（ES6対応）
+- モダンブラウザ（ES6+ 対応）
 - Canvas API対応
 - FileReader API対応
 - Clipboard API対応（ペースト機能用）
+- Drag and Drop API対応
+- async/await対応（ペーストボタン用）
 
 ## テスト方法
 
+### 基本機能のテスト
 1. ブラウザで `index.html` を開く
-2. 画像をアップロードまたはペースト
-3. 各ツールで描画・編集
-4. 保存機能で画像をダウンロード
-5. クリア機能でリセット
+2. **画像読み込みのテスト**（全4方法）
+   - アップロードボタンをクリックしてファイルを選択
+   - 画像ファイルをキャンバスにドラッグ&ドロップ
+   - 画像をコピーして Ctrl+V でペースト
+   - ペーストボタンをクリック
+3. **描画ツールのテスト**
+   - ブラシで描画
+   - 消しゴムで消去
+   - テキスト追加
+4. **保存・クリア機能のテスト**
+   - 保存ボタンで画像をダウンロード
+   - クリア機能でリセット
+5. **通知システムのテスト**
+   - 各操作で適切な通知が表示されることを確認
 
 ## コントリビューション
 

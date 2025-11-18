@@ -12,13 +12,17 @@
             <h1>画像エディター</h1>
         </header>
 
+        <!-- 通知メッセージエリア -->
+        <div id="notification" class="notification"></div>
+
         <div class="toolbar">
             <div class="tool-group">
                 <h3>ファイル</h3>
                 <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                <button id="uploadBtn" class="btn">画像をアップロード</button>
-                <button id="saveBtn" class="btn">画像を保存</button>
-                <button id="clearBtn" class="btn btn-danger">クリア</button>
+                <button id="uploadBtn" class="btn">📁 画像をアップロード</button>
+                <button id="pasteBtn" class="btn">📋 ペースト (Ctrl+V)</button>
+                <button id="saveBtn" class="btn">💾 画像を保存</button>
+                <button id="clearBtn" class="btn btn-danger">🗑️ クリア</button>
             </div>
 
             <div class="tool-group">
@@ -47,16 +51,28 @@
             </div>
         </div>
 
-        <div class="canvas-container">
+        <div class="canvas-container" id="dropZone">
+            <div id="dropHint" class="drop-hint">
+                <p>📸 画像をここにドラッグ&ドロップ</p>
+                <p>または</p>
+                <p>Ctrl+V で貼り付け</p>
+            </div>
             <canvas id="canvas"></canvas>
         </div>
 
         <div class="instructions">
             <p><strong>使い方：</strong></p>
             <ul>
-                <li>「画像をアップロード」ボタンで画像を読み込む、または Ctrl+V で画像を貼り付け</li>
-                <li>ツールを選択して、キャンバス上で描画またはテキストを追加</li>
-                <li>「画像を保存」ボタンで編集した画像をダウンロード</li>
+                <li><strong>画像を読み込む：</strong>
+                    <ul>
+                        <li>「📁 画像をアップロード」ボタンをクリック</li>
+                        <li>画像をキャンバスにドラッグ&ドロップ</li>
+                        <li>Ctrl+V (Mac: Cmd+V) でクリップボードから貼り付け</li>
+                        <li>「📋 ペースト」ボタンをクリック（クリップボードから）</li>
+                    </ul>
+                </li>
+                <li><strong>編集：</strong> ツールを選択して、キャンバス上で描画またはテキストを追加</li>
+                <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
             </ul>
         </div>
     </div>

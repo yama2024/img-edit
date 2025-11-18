@@ -121,20 +121,81 @@ input[type="range"] {
 }
 
 .canvas-container {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 30px;
     background: #ecf0f1;
     min-height: 500px;
+    transition: all 0.3s ease;
+}
+
+.canvas-container.drag-over {
+    background: #d5e8f7;
+    border: 3px dashed #667eea;
+}
+
+.drop-hint {
+    position: absolute;
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 1.2em;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.drop-hint p {
+    margin: 10px 0;
+}
+
+.drop-hint.hidden {
+    display: none;
 }
 
 #canvas {
+    position: relative;
+    z-index: 2;
     background: white;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     cursor: crosshair;
     max-width: 100%;
     border-radius: 5px;
+}
+
+/* 通知スタイル */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: #2ecc71;
+    color: white;
+}
+
+.notification.error {
+    background: #e74c3c;
+    color: white;
+}
+
+.notification.info {
+    background: #3498db;
+    color: white;
 }
 
 .instructions {
