@@ -222,7 +222,7 @@
             </div>
 
             <div class="tool-group">
-                <h3>描画・塗り・枠線</h3>
+                <h3>色</h3>
                 <div class="color-setting">
                     <input type="color" id="colorPicker" value="#000000">
                     <label for="colorPicker">描画色</label>
@@ -238,21 +238,22 @@
             </div>
 
             <div class="tool-group">
-                <h3>線の太さ</h3>
-                <input type="range" id="brushSize" min="1" max="50" value="5">
-                <span id="brushSizeValue">5</span>px
-            </div>
-
-            <div class="tool-group">
-                <h3>消しゴム</h3>
-                <input type="range" id="eraserSize" min="1" max="100" value="20">
-                <span id="eraserSizeValue">20</span>px
-            </div>
-
-            <div class="tool-group">
-                <h3>フォント</h3>
-                <input type="range" id="fontSize" min="10" max="100" value="24">
-                <span id="fontSizeValue">24</span>px
+                <h3>サイズ</h3>
+                <div class="size-setting">
+                    <label>線の太さ</label>
+                    <input type="range" id="brushSize" min="1" max="50" value="5">
+                    <span id="brushSizeValue">5</span>px
+                </div>
+                <div class="size-setting">
+                    <label>消しゴム</label>
+                    <input type="range" id="eraserSize" min="1" max="100" value="20">
+                    <span id="eraserSizeValue">20</span>px
+                </div>
+                <div class="size-setting">
+                    <label>フォント</label>
+                    <input type="range" id="fontSize" min="10" max="100" value="24">
+                    <span id="fontSizeValue">24</span>px
+                </div>
             </div>
         </div>
 
