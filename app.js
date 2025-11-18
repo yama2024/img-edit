@@ -149,7 +149,7 @@ toolButtons.forEach(btn => {
         // ツールに応じたカーソルを設定
         if (currentTool === 'text') {
             canvas.style.cursor = 'text';
-        } else if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
+        } else if (currentTool === 'rectangle' || currentTool === 'square' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
             canvas.style.cursor = 'crosshair';
         } else {
             canvas.style.cursor = 'crosshair';
@@ -384,7 +384,7 @@ function updateUndoRedoButtons() {
 function drawShape(shape) {
     ctx.save();
 
-    if (shape.type === 'rectangle') {
+    if (shape.type === 'rectangle' || shape.type === 'square') {
         if (shape.hasFill) {
             ctx.fillStyle = shape.fill;
             ctx.fillRect(shape.x, shape.y, shape.width, shape.height);
@@ -725,7 +725,7 @@ function getClickedShapeIndex(x, y) {
         const shape = shapeObjects[i];
         const padding = 5;
 
-        if (shape.type === 'rectangle' || shape.type === 'circle') {
+        if (shape.type === 'rectangle' || shape.type === 'square' || shape.type === 'circle') {
             if (x >= shape.x - padding && x <= shape.x + shape.width + padding &&
                 y >= shape.y - padding && y <= shape.y + shape.height + padding) {
                 return i;
@@ -842,7 +842,7 @@ function startDrawing(e) {
     }
 
     // 図形ツールの場合
-    if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
+    if (currentTool === 'rectangle' || currentTool === 'square' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
         if (!imageLoaded) {
             showNotification('先に画像をアップロードまたはペーストしてください', 'info');
             return;
@@ -1006,15 +1006,27 @@ function draw(e) {
 
     // 図形を描画中（プレビュー）
     if (isDrawingShape) {
-        const width = pos.x - shapeStartX;
-        const height = pos.y - shapeStartY;
+        let width = pos.x - shapeStartX;
+        let height = pos.y - shapeStartY;
+
+        // 正方形の場合は縦横比を1:1に固定
+        if (currentTool === 'square') {
+            const size = Math.max(Math.abs(width), Math.abs(height));
+            width = width >= 0 ? size : -size;
+            height = height >= 0 ? size : -size;
+        }
+
+        const finalWidth = Math.abs(width);
+        const finalHeight = Math.abs(height);
+        const finalX = width >= 0 ? shapeStartX : shapeStartX - finalWidth;
+        const finalY = height >= 0 ? shapeStartY : shapeStartY - finalHeight;
 
         previewShape = {
             type: currentTool,
-            x: width >= 0 ? shapeStartX : pos.x,
-            y: height >= 0 ? shapeStartY : pos.y,
-            width: Math.abs(width),
-            height: Math.abs(height),
+            x: finalX,
+            y: finalY,
+            width: finalWidth,
+            height: finalHeight,
             fill: fillColor,
             stroke: strokeColor,
             lineWidth: brushSize,
@@ -1680,7 +1692,7 @@ document.addEventListener('keydown', (e) => {
 
     // Deleteキーで選択中の図形を削除
     if (e.key === 'Delete' && selectedShapeIndex !== -1 &&
-        (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow')) {
+        (currentTool === 'rectangle' || currentTool === 'square' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow')) {
         e.preventDefault();
         shapeObjects.splice(selectedShapeIndex, 1);
         selectedShapeIndex = -1;
@@ -1733,5 +1745,6 @@ console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
 console.log('📐 図形ツール: ドラッグで描画、クリックで選択、ハンドルでサイズ変更、Deleteキーで削除');
+console.log('■ 正方形ツール: 縦横比1:1の四角形を描画');
 console.log('↶ 元に戻す: Ctrl+Z');
 showNotification('画像エディターへようこそ！', 'info');
