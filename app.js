@@ -5,6 +5,7 @@ let isDrawing = false;
 let currentTool = 'brush';
 let currentColor = '#000000';
 let brushSize = 5;
+let brushOpacity = 1.0; // 0.0 - 1.0の範囲
 let fontSize = 24;
 let lastX = 0;
 let lastY = 0;
@@ -38,6 +39,8 @@ const redoBtn = document.getElementById('redoBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
+const brushOpacitySlider = document.getElementById('brushOpacity');
+const brushOpacityValue = document.getElementById('brushOpacityValue');
 const fontSizeSlider = document.getElementById('fontSize');
 const fontSizeValue = document.getElementById('fontSizeValue');
 const toolButtons = document.querySelectorAll('.tool-btn');
@@ -51,9 +54,19 @@ const textCancelBtn = document.getElementById('textCancelBtn');
 const dialogFontSize = document.getElementById('dialogFontSize');
 const dialogFontSizeValue = document.getElementById('dialogFontSizeValue');
 const dialogFontSizeInput = document.getElementById('dialogFontSizeInput');
+const dialogFontFamily = document.getElementById('dialogFontFamily');
 const dialogColorPicker = document.getElementById('dialogColorPicker');
 const textPreview = document.getElementById('textPreview');
 const colorPresets = document.querySelectorAll('.color-preset');
+const saveFormatDialog = document.getElementById('saveFormatDialog');
+const saveFormatRadios = document.querySelectorAll('input[name="saveFormat"]');
+const saveQuality = document.getElementById('saveQuality');
+const saveQualityValue = document.getElementById('saveQualityValue');
+const saveQualityInput = document.getElementById('saveQualityInput');
+const qualityGroup = document.getElementById('qualityGroup');
+const saveConfirmBtn = document.getElementById('saveConfirmBtn');
+const saveCancelBtn = document.getElementById('saveCancelBtn');
+const brushColorPresets = document.querySelectorAll('.brush-color-preset');
 
 // 初期化
 function init() {
@@ -227,12 +240,45 @@ toolButtons.forEach(btn => {
 // 色選択
 colorPicker.addEventListener('change', (e) => {
     currentColor = e.target.value;
+    updateBrushColorPresetSelection(currentColor);
 });
+
+// ブラシカラープリセットボタン
+brushColorPresets.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const color = btn.dataset.color;
+        currentColor = color;
+        colorPicker.value = color;
+        updateBrushColorPresetSelection(color);
+    });
+});
+
+// ブラシカラープリセットの選択状態を更新
+function updateBrushColorPresetSelection(color) {
+    brushColorPresets.forEach(btn => {
+        if (btn.dataset.color.toUpperCase() === color.toUpperCase()) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
+}
+
+// 初期カラー設定
+updateBrushColorPresetSelection(currentColor);
 
 // ブラシサイズ
 brushSizeSlider.addEventListener('input', (e) => {
     brushSize = e.target.value;
     brushSizeValue.textContent = brushSize;
+});
+
+// ブラシ不透明度
+brushOpacitySlider.addEventListener('input', (e) => {
+    const opacityPercent = e.target.value;
+    brushOpacity = opacityPercent / 100; // 0.01 - 1.0に変換
+    brushOpacityValue.textContent = opacityPercent;
 });
 
 // フォントサイズ
@@ -261,6 +307,11 @@ dialogFontSizeInput.addEventListener('input', (e) => {
     updateTextPreview();
 });
 
+// ダイアログ内のフォント選択
+dialogFontFamily.addEventListener('change', (e) => {
+    updateTextPreview();
+});
+
 // ダイアログ内のカラーピッカー
 dialogColorPicker.addEventListener('input', (e) => {
     updateColorPresetSelection(e.target.value);
@@ -278,6 +329,37 @@ colorPresets.forEach(btn => {
     });
 });
 
+// 保存形式選択イベント
+saveFormatRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        const format = e.target.value;
+        // JPEG/WebPの場合は品質設定を表示
+        if (format === 'jpeg' || format === 'webp') {
+            qualityGroup.style.display = 'block';
+        } else {
+            qualityGroup.style.display = 'none';
+        }
+    });
+});
+
+// 保存品質スライダー
+saveQuality.addEventListener('input', (e) => {
+    const value = e.target.value;
+    saveQualityValue.textContent = value;
+    saveQualityInput.value = value;
+});
+
+// 保存品質数値入力
+saveQualityInput.addEventListener('input', (e) => {
+    let value = parseInt(e.target.value);
+    if (value < 1) value = 1;
+    if (value > 100) value = 100;
+    if (isNaN(value)) value = 92;
+
+    saveQuality.value = value;
+    saveQualityValue.textContent = value;
+});
+
 // テキスト入力のリアルタイムプレビュー
 textInput.addEventListener('input', () => {
     updateTextPreview();
@@ -287,10 +369,12 @@ textInput.addEventListener('input', () => {
 function updateTextPreview() {
     const text = textInput.value.trim();
     const fontSize = dialogFontSize.value;
+    const fontFamily = dialogFontFamily.value;
     const color = dialogColorPicker.value;
 
     textPreview.textContent = text || 'サンプルテキスト';
     textPreview.style.fontSize = fontSize + 'px';
+    textPreview.style.fontFamily = fontFamily;
     textPreview.style.color = color;
 }
 
@@ -332,7 +416,8 @@ function redrawCanvas() {
 
     // すべてのテキストを描画
     textObjects.forEach((textObj, index) => {
-        ctx.font = `${textObj.fontSize}px Arial`;
+        const fontFamily = textObj.fontFamily || 'Arial, sans-serif';
+        ctx.font = `${textObj.fontSize}px ${fontFamily}`;
         ctx.fillStyle = textObj.color;
         ctx.fillText(textObj.text, textObj.x, textObj.y);
 
@@ -494,7 +579,8 @@ function getMousePos(e) {
 function getClickedTextIndex(x, y) {
     for (let i = textObjects.length - 1; i >= 0; i--) {
         const textObj = textObjects[i];
-        ctx.font = `${textObj.fontSize}px Arial`;
+        const fontFamily = textObj.fontFamily || 'Arial, sans-serif';
+        ctx.font = `${textObj.fontSize}px ${fontFamily}`;
         const metrics = ctx.measureText(textObj.text);
         const textWidth = metrics.width;
         const textHeight = textObj.fontSize;
@@ -523,7 +609,8 @@ function editText(e) {
         // ダイアログを表示し、既存のテキストとスタイルを設定
         textInput.value = textObj.text;
 
-        // ダイアログ内のフォントサイズと色を設定
+        // ダイアログ内のフォント、フォントサイズ、色を設定
+        dialogFontFamily.value = textObj.fontFamily || 'Arial, sans-serif';
         dialogFontSize.value = textObj.fontSize;
         dialogFontSizeValue.textContent = textObj.fontSize;
         dialogFontSizeInput.value = textObj.fontSize;
@@ -611,6 +698,9 @@ function draw(e) {
 
     const pos2 = getMousePos(e);
 
+    // 不透明度を設定
+    ctx.globalAlpha = brushOpacity;
+
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(pos2.x, pos2.y);
@@ -619,6 +709,9 @@ function draw(e) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
+
+    // 不透明度をリセット
+    ctx.globalAlpha = 1.0;
 
     lastX = pos2.x;
     lastY = pos2.y;
@@ -649,6 +742,7 @@ function addText(e) {
 
     // ダイアログを表示し、現在の設定を反映
     textInput.value = '';
+    dialogFontFamily.value = 'Arial, sans-serif';
     dialogFontSize.value = fontSize;
     dialogFontSizeValue.textContent = fontSize;
     dialogFontSizeInput.value = fontSize;
@@ -670,6 +764,7 @@ textOkBtn.addEventListener('click', () => {
 
     if (text && pendingTextPos) {
         // ダイアログ内の値を取得（数値入力とスライダーは同期されている）
+        const dialogFontFamilyVal = dialogFontFamily.value;
         const dialogFontSizeVal = parseInt(dialogFontSize.value);
         const dialogColorVal = dialogColorPicker.value;
 
@@ -679,6 +774,7 @@ textOkBtn.addEventListener('click', () => {
                 text: text,
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
+                fontFamily: dialogFontFamilyVal,
                 fontSize: dialogFontSizeVal,
                 color: dialogColorVal
             };
@@ -689,6 +785,7 @@ textOkBtn.addEventListener('click', () => {
                 text: text,
                 x: pendingTextPos.x,
                 y: pendingTextPos.y,
+                fontFamily: dialogFontFamilyVal,
                 fontSize: dialogFontSizeVal,
                 color: dialogColorVal
             });
@@ -766,18 +863,67 @@ function handleTouchMove(e) {
     canvas.dispatchEvent(mouseEvent);
 }
 
-// 画像を保存
+// 画像を保存 - ダイアログを表示
 saveBtn.addEventListener('click', () => {
+    saveFormatDialog.classList.add('show');
+});
+
+// 保存確定ボタン
+saveConfirmBtn.addEventListener('click', () => {
     try {
-        const link = document.createElement('a');
+        // 選択された形式を取得
+        const selectedFormat = document.querySelector('input[name="saveFormat"]:checked').value;
+        const quality = saveQuality.value / 100; // 0.01 - 1.00に変換
+
+        // タイムスタンプ生成
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        link.download = `edited-image-${timestamp}.png`;
-        link.href = canvas.toDataURL();
+
+        // 形式に応じてMIMEタイプとファイル拡張子を設定
+        let mimeType, extension;
+        if (selectedFormat === 'png') {
+            mimeType = 'image/png';
+            extension = 'png';
+        } else if (selectedFormat === 'jpeg') {
+            mimeType = 'image/jpeg';
+            extension = 'jpg';
+        } else if (selectedFormat === 'webp') {
+            mimeType = 'image/webp';
+            extension = 'webp';
+        }
+
+        // データURLを生成（PNGの場合は品質パラメータなし）
+        let dataURL;
+        if (selectedFormat === 'png') {
+            dataURL = canvas.toDataURL(mimeType);
+        } else {
+            dataURL = canvas.toDataURL(mimeType, quality);
+        }
+
+        // ダウンロード
+        const link = document.createElement('a');
+        link.download = `edited-image-${timestamp}.${extension}`;
+        link.href = dataURL;
         link.click();
-        showNotification('画像を保存しました！', 'success');
+
+        // ダイアログを閉じる
+        saveFormatDialog.classList.remove('show');
+
+        showNotification(`画像を${selectedFormat.toUpperCase()}形式で保存しました！`, 'success');
     } catch (err) {
         console.error('保存エラー:', err);
         showNotification('画像の保存に失敗しました', 'error');
+    }
+});
+
+// 保存キャンセルボタン
+saveCancelBtn.addEventListener('click', () => {
+    saveFormatDialog.classList.remove('show');
+});
+
+// 保存ダイアログの背景クリックで閉じる
+saveFormatDialog.addEventListener('click', (e) => {
+    if (e.target === saveFormatDialog) {
+        saveCancelBtn.click();
     }
 });
 

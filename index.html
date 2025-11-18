@@ -15,6 +15,60 @@
         <!-- 通知メッセージエリア -->
         <div id="notification" class="notification"></div>
 
+        <!-- 保存形式選択ダイアログ -->
+        <div id="saveFormatDialog" class="text-input-dialog" role="dialog" aria-labelledby="saveDialogTitle" aria-modal="true">
+            <div class="text-input-content">
+                <h3 id="saveDialogTitle">💾 保存形式を選択</h3>
+
+                <div class="dialog-form-group">
+                    <label>
+                        <span class="label-icon">📁</span>
+                        ファイル形式
+                    </label>
+                    <div class="format-options">
+                        <label class="format-option">
+                            <input type="radio" name="saveFormat" value="png" checked>
+                            <span class="format-label">PNG</span>
+                            <span class="format-desc">高品質・透過対応</span>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="saveFormat" value="jpeg">
+                            <span class="format-label">JPEG</span>
+                            <span class="format-desc">小サイズ・写真向け</span>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="saveFormat" value="webp">
+                            <span class="format-label">WebP</span>
+                            <span class="format-desc">最小サイズ・高品質</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="dialog-form-group" id="qualityGroup" style="display: none;">
+                    <label for="saveQuality">
+                        <span class="label-icon">⚙️</span>
+                        画質: <span id="saveQualityValue">92</span>%
+                    </label>
+                    <div class="size-controls">
+                        <input type="range" id="saveQuality" min="1" max="100" value="92" class="dialog-slider" aria-label="画質スライダー">
+                        <input type="number" id="saveQualityInput" min="1" max="100" value="92" class="size-input" aria-label="画質数値入力">
+                    </div>
+                    <p class="quality-hint">品質が高いほどファイルサイズが大きくなります</p>
+                </div>
+
+                <div class="text-input-buttons">
+                    <button id="saveConfirmBtn" class="btn btn-primary">
+                        <span class="btn-icon">💾</span>
+                        保存
+                    </button>
+                    <button id="saveCancelBtn" class="btn btn-secondary">
+                        <span class="btn-icon">✕</span>
+                        キャンセル
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- テキスト入力ダイアログ -->
         <div id="textInputDialog" class="text-input-dialog" role="dialog" aria-labelledby="dialogTitle" aria-modal="true">
             <div class="text-input-content">
@@ -33,6 +87,25 @@
                         <span class="label-hint">最大100文字</span>
                     </label>
                     <input type="text" id="textInput" placeholder="ここにテキストを入力..." maxlength="100" autocomplete="off">
+                </div>
+
+                <div class="dialog-form-group">
+                    <label for="dialogFontFamily">
+                        <span class="label-icon">✒️</span>
+                        フォント
+                    </label>
+                    <select id="dialogFontFamily" class="font-select" aria-label="フォント選択">
+                        <option value="Arial, sans-serif" style="font-family: Arial, sans-serif;">Arial</option>
+                        <option value="'Times New Roman', serif" style="font-family: 'Times New Roman', serif;">Times New Roman</option>
+                        <option value="'Courier New', monospace" style="font-family: 'Courier New', monospace;">Courier New</option>
+                        <option value="Georgia, serif" style="font-family: Georgia, serif;">Georgia</option>
+                        <option value="Verdana, sans-serif" style="font-family: Verdana, sans-serif;">Verdana</option>
+                        <option value="'Comic Sans MS', cursive" style="font-family: 'Comic Sans MS', cursive;">Comic Sans MS</option>
+                        <option value="Impact, sans-serif" style="font-family: Impact, sans-serif;">Impact</option>
+                        <option value="'Trebuchet MS', sans-serif" style="font-family: 'Trebuchet MS', sans-serif;">Trebuchet MS</option>
+                        <option value="'MS Gothic', monospace" style="font-family: 'MS Gothic', monospace;">MS Gothic (日本語)</option>
+                        <option value="'Hiragino Sans', sans-serif" style="font-family: 'Hiragino Sans', sans-serif;">Hiragino Sans (日本語)</option>
+                    </select>
                 </div>
 
                 <div class="dialog-form-group">
@@ -112,12 +185,30 @@
                 <h3>色</h3>
                 <input type="color" id="colorPicker" value="#000000">
                 <label for="colorPicker">描画色</label>
+                <div class="brush-color-presets">
+                    <button type="button" class="brush-color-preset" data-color="#000000" style="background: #000000;" title="黒"></button>
+                    <button type="button" class="brush-color-preset" data-color="#FFFFFF" style="background: #FFFFFF; border: 1px solid #ddd;" title="白"></button>
+                    <button type="button" class="brush-color-preset" data-color="#FF0000" style="background: #FF0000;" title="赤"></button>
+                    <button type="button" class="brush-color-preset" data-color="#00FF00" style="background: #00FF00;" title="緑"></button>
+                    <button type="button" class="brush-color-preset" data-color="#0000FF" style="background: #0000FF;" title="青"></button>
+                    <button type="button" class="brush-color-preset" data-color="#FFFF00" style="background: #FFFF00;" title="黄"></button>
+                    <button type="button" class="brush-color-preset" data-color="#FF00FF" style="background: #FF00FF;" title="マゼンタ"></button>
+                    <button type="button" class="brush-color-preset" data-color="#00FFFF" style="background: #00FFFF;" title="シアン"></button>
+                    <button type="button" class="brush-color-preset" data-color="#FFA500" style="background: #FFA500;" title="オレンジ"></button>
+                    <button type="button" class="brush-color-preset" data-color="#800080" style="background: #800080;" title="紫"></button>
+                </div>
             </div>
 
             <div class="tool-group">
                 <h3>線の太さ</h3>
                 <input type="range" id="brushSize" min="1" max="50" value="5">
                 <span id="brushSizeValue">5</span>px
+            </div>
+
+            <div class="tool-group">
+                <h3>不透明度</h3>
+                <input type="range" id="brushOpacity" min="1" max="100" value="100">
+                <span id="brushOpacityValue">100</span>%
             </div>
 
             <div class="tool-group">
