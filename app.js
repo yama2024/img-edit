@@ -13,7 +13,7 @@ let imageLoaded = false;
 // テキストレイヤー管理
 let textObjects = [];
 let selectedTextIndex = -1;
-let baseImage = null; // 元の画像を保持
+let baseCanvas = null; // 元の画像とブラシ描画を保持
 let isDraggingText = false;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -67,7 +67,7 @@ function saveHistory() {
         imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
         textObjects: JSON.parse(JSON.stringify(textObjects)),
         selectedTextIndex: selectedTextIndex,
-        baseImage: baseImage ? baseImage.src : null,
+        baseCanvas: baseCanvas ? baseCanvas.toDataURL() : null,
         canvasWidth: canvas.width,
         canvasHeight: canvas.height
     };
@@ -92,20 +92,28 @@ function restoreHistory(index) {
     canvas.width = state.canvasWidth;
     canvas.height = state.canvasHeight;
 
-    // 画像データを復元
-    ctx.putImageData(state.imageData, 0, 0);
-
     // テキストオブジェクトを復元
     textObjects = JSON.parse(JSON.stringify(state.textObjects));
     selectedTextIndex = state.selectedTextIndex;
 
-    // ベース画像を復元（必要な場合）
-    if (state.baseImage && state.baseImage !== baseImage?.src) {
+    // baseCanvasを復元
+    if (state.baseCanvas) {
         const img = new Image();
         img.onload = () => {
-            baseImage = img;
+            baseCanvas = document.createElement('canvas');
+            baseCanvas.width = state.canvasWidth;
+            baseCanvas.height = state.canvasHeight;
+            const baseCtx = baseCanvas.getContext('2d');
+            baseCtx.drawImage(img, 0, 0);
+
+            // 復元後にキャンバスを再描画
+            redrawCanvas();
         };
-        img.src = state.baseImage;
+        img.src = state.baseCanvas;
+    } else {
+        baseCanvas = null;
+        // 画像データを直接復元（初期状態など）
+        ctx.putImageData(state.imageData, 0, 0);
     }
 
     historyIndex = index;
@@ -140,6 +148,9 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
     }, 3000);
 }
+
+// 初期状態を履歴に保存
+saveHistory();
 
 // ツール選択
 toolButtons.forEach(btn => {
@@ -191,9 +202,9 @@ function redrawCanvas() {
     // キャンバスをクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // ベース画像を描画
-    if (baseImage) {
-        ctx.drawImage(baseImage, 0, 0);
+    // ベース画像とブラシ描画を描画
+    if (baseCanvas) {
+        ctx.drawImage(baseCanvas, 0, 0);
     } else {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -235,8 +246,12 @@ function loadImageFromFile(file) {
             canvas.width = img.width;
             canvas.height = img.height;
 
-            // ベース画像として保存
-            baseImage = img;
+            // ベースキャンバスを作成して画像を描画
+            baseCanvas = document.createElement('canvas');
+            baseCanvas.width = img.width;
+            baseCanvas.height = img.height;
+            const baseCtx = baseCanvas.getContext('2d');
+            baseCtx.drawImage(img, 0, 0);
 
             // 既存のテキストをクリア
             textObjects = [];
@@ -473,6 +488,7 @@ function draw(e) {
 
     const pos2 = getMousePos(e);
 
+    // メインキャンバスに描画
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(pos2.x, pos2.y);
@@ -481,6 +497,19 @@ function draw(e) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
+
+    // baseCanvasにも同時に描画（ブラシ描画を永続化）
+    if (baseCanvas) {
+        const baseCtx = baseCanvas.getContext('2d');
+        baseCtx.beginPath();
+        baseCtx.moveTo(lastX, lastY);
+        baseCtx.lineTo(pos2.x, pos2.y);
+        baseCtx.strokeStyle = currentTool === 'eraser' ? 'white' : currentColor;
+        baseCtx.lineWidth = brushSize;
+        baseCtx.lineCap = 'round';
+        baseCtx.lineJoin = 'round';
+        baseCtx.stroke();
+    }
 
     lastX = pos2.x;
     lastY = pos2.y;
@@ -630,7 +659,7 @@ clearBtn.addEventListener('click', () => {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         imageLoaded = false;
-        baseImage = null;
+        baseCanvas = null;
         textObjects = [];
         selectedTextIndex = -1;
         dropHint.classList.remove('hidden');
