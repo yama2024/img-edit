@@ -45,6 +45,12 @@ let isCropping = false;
 let cropStartX = 0;
 let cropStartY = 0;
 let cropRect = null; // { x, y, width, height }
+let isDraggingCrop = false;
+let isResizingCrop = false;
+let cropResizeHandle = null;
+let cropDragOffsetX = 0;
+let cropDragOffsetY = 0;
+let isCreatingCropRect = false;
 let originalAspectRatio = 1;
 
 // キャンバスのデフォルトサイズ
@@ -275,17 +281,65 @@ function redrawCanvas() {
                 cropRect.x, cropRect.y, cropRect.width, cropRect.height);
         }
 
+        // テキストとシェイプを描画
+        textObjects.forEach((textObj, index) => {
+            ctx.font = `${textObj.fontSize}px Arial`;
+            ctx.fillStyle = textObj.color;
+            ctx.fillText(textObj.text, textObj.x, textObj.y);
+
+            if (index === selectedTextIndex) {
+                const metrics = ctx.measureText(textObj.text);
+                const textWidth = metrics.width;
+                const textHeight = textObj.fontSize;
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 3]);
+                ctx.strokeRect(textObj.x - 5, textObj.y - textHeight - 5, textWidth + 10, textHeight + 10);
+                ctx.setLineDash([]);
+            }
+        });
+
+        shapeObjects.forEach(shape => {
+            drawShape(shape);
+        });
+
+        // 3x3グリッド線を描画
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
+
+        // 縦線
+        for (let i = 1; i < 3; i++) {
+            const x = cropRect.x + (cropRect.width / 3) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, cropRect.y);
+            ctx.lineTo(x, cropRect.y + cropRect.height);
+            ctx.stroke();
+        }
+
+        // 横線
+        for (let i = 1; i < 3; i++) {
+            const y = cropRect.y + (cropRect.height / 3) * i;
+            ctx.beginPath();
+            ctx.moveTo(cropRect.x, y);
+            ctx.lineTo(cropRect.x + cropRect.width, y);
+            ctx.stroke();
+        }
+
         // 選択範囲の枠線
         ctx.strokeStyle = '#667eea';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([10, 5]);
-        ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+        ctx.lineWidth = 2;
         ctx.setLineDash([]);
+        ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+
+        // リサイズハンドルを描画
+        drawCropHandles(cropRect);
 
         // サイズ表示
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(cropRect.x, cropRect.y - 30, 150, 25);
         ctx.fillStyle = '#667eea';
         ctx.font = 'bold 14px Arial';
-        const sizeText = `${Math.round(cropRect.width)} × ${Math.round(cropRect.height)}`;
+        const sizeText = `${Math.round(cropRect.width)} × ${Math.round(cropRect.height)} px`;
         ctx.fillText(sizeText, cropRect.x + 5, cropRect.y - 10);
     }
 }
@@ -560,6 +614,65 @@ function getShapeHandles(shape) {
         { x: x, y: y + h, type: 'sw' },       // 左下
         { x: x, y: y + h / 2, type: 'w' }     // 左
     ];
+}
+
+// トリミング範囲のハンドル位置を取得
+function getCropHandles(cropRect) {
+    const x = cropRect.x;
+    const y = cropRect.y;
+    const w = cropRect.width;
+    const h = cropRect.height;
+
+    return [
+        { x: x, y: y, type: 'nw' },           // 左上
+        { x: x + w / 2, y: y, type: 'n' },    // 上
+        { x: x + w, y: y, type: 'ne' },       // 右上
+        { x: x + w, y: y + h / 2, type: 'e' }, // 右
+        { x: x + w, y: y + h, type: 'se' },   // 右下
+        { x: x + w / 2, y: y + h, type: 's' }, // 下
+        { x: x, y: y + h, type: 'sw' },       // 左下
+        { x: x, y: y + h / 2, type: 'w' }     // 左
+    ];
+}
+
+// トリミング範囲のハンドルを描画
+function drawCropHandles(cropRect) {
+    const handles = getCropHandles(cropRect);
+    const handleSize = 12;
+
+    ctx.fillStyle = '#667eea';
+
+    handles.forEach(handle => {
+        // ハンドルの外枠（白）
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(handle.x - handleSize / 2 - 1, handle.y - handleSize / 2 - 1, handleSize + 2, handleSize + 2);
+
+        // ハンドル本体（青）
+        ctx.fillStyle = '#667eea';
+        ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+    });
+}
+
+// クリックされたトリミング範囲のハンドルを判定
+function getClickedCropHandle(x, y, cropRect) {
+    if (!cropRect) return null;
+
+    const handles = getCropHandles(cropRect);
+    const handleSize = 12;
+
+    for (const handle of handles) {
+        if (Math.abs(x - handle.x) <= handleSize / 2 && Math.abs(y - handle.y) <= handleSize / 2) {
+            return handle.type;
+        }
+    }
+    return null;
+}
+
+// トリミング範囲内かどうかを判定
+function isInsideCropRect(x, y, cropRect) {
+    if (!cropRect) return false;
+    return x >= cropRect.x && x <= cropRect.x + cropRect.width &&
+           y >= cropRect.y && y <= cropRect.y + cropRect.height;
 }
 
 // 画像ファイルを読み込む
@@ -842,6 +955,31 @@ function startDrawing(e) {
 
     // トリミングモードの場合
     if (isCropping) {
+        if (cropRect) {
+            // 既にトリミング範囲がある場合
+            // ハンドルをクリックしたかチェック
+            const handle = getClickedCropHandle(pos.x, pos.y, cropRect);
+            if (handle) {
+                // リサイズモード
+                isResizingCrop = true;
+                cropResizeHandle = handle;
+                cropStartX = pos.x;
+                cropStartY = pos.y;
+                return;
+            }
+
+            // トリミング範囲内をクリックしたかチェック
+            if (isInsideCropRect(pos.x, pos.y, cropRect)) {
+                // 移動モード
+                isDraggingCrop = true;
+                cropDragOffsetX = pos.x - cropRect.x;
+                cropDragOffsetY = pos.y - cropRect.y;
+                return;
+            }
+        }
+
+        // 新しいトリミング範囲を作成
+        isCreatingCropRect = true;
         cropStartX = pos.x;
         cropStartY = pos.y;
         cropRect = null;
@@ -995,19 +1133,96 @@ function draw(e) {
     const pos = getMousePos(e);
 
     // トリミングモード中のドラッグ
-    if (isCropping && cropStartX !== undefined && cropStartY !== undefined) {
-        const width = pos.x - cropStartX;
-        const height = pos.y - cropStartY;
+    if (isCropping) {
+        // トリミング範囲のリサイズ中
+        if (isResizingCrop && cropRect) {
+            const dx = pos.x - cropStartX;
+            const dy = pos.y - cropStartY;
 
-        cropRect = {
-            x: width >= 0 ? cropStartX : pos.x,
-            y: height >= 0 ? cropStartY : pos.y,
-            width: Math.abs(width),
-            height: Math.abs(height)
-        };
+            let newX = cropRect.x;
+            let newY = cropRect.y;
+            let newWidth = cropRect.width;
+            let newHeight = cropRect.height;
 
-        redrawCanvas();
-        return;
+            // ハンドルに応じてリサイズ
+            if (cropResizeHandle === 'nw') {
+                newX += dx;
+                newY += dy;
+                newWidth -= dx;
+                newHeight -= dy;
+            } else if (cropResizeHandle === 'n') {
+                newY += dy;
+                newHeight -= dy;
+            } else if (cropResizeHandle === 'ne') {
+                newY += dy;
+                newWidth += dx;
+                newHeight -= dy;
+            } else if (cropResizeHandle === 'e') {
+                newWidth += dx;
+            } else if (cropResizeHandle === 'se') {
+                newWidth += dx;
+                newHeight += dy;
+            } else if (cropResizeHandle === 's') {
+                newHeight += dy;
+            } else if (cropResizeHandle === 'sw') {
+                newX += dx;
+                newWidth -= dx;
+                newHeight += dy;
+            } else if (cropResizeHandle === 'w') {
+                newX += dx;
+                newWidth -= dx;
+            }
+
+            // 最小サイズを確保
+            if (newWidth > 10 && newHeight > 10) {
+                // キャンバス範囲内に制限
+                if (newX >= 0 && newY >= 0 &&
+                    newX + newWidth <= canvas.width &&
+                    newY + newHeight <= canvas.height) {
+                    cropRect.x = newX;
+                    cropRect.y = newY;
+                    cropRect.width = newWidth;
+                    cropRect.height = newHeight;
+                    cropStartX = pos.x;
+                    cropStartY = pos.y;
+                }
+            }
+
+            redrawCanvas();
+            return;
+        }
+
+        // トリミング範囲の移動中
+        if (isDraggingCrop && cropRect) {
+            let newX = pos.x - cropDragOffsetX;
+            let newY = pos.y - cropDragOffsetY;
+
+            // キャンバス範囲内に制限
+            newX = Math.max(0, Math.min(newX, canvas.width - cropRect.width));
+            newY = Math.max(0, Math.min(newY, canvas.height - cropRect.height));
+
+            cropRect.x = newX;
+            cropRect.y = newY;
+
+            redrawCanvas();
+            return;
+        }
+
+        // 新しいトリミング範囲を作成中
+        if (isCreatingCropRect && cropStartX !== undefined && cropStartY !== undefined) {
+            const width = pos.x - cropStartX;
+            const height = pos.y - cropStartY;
+
+            cropRect = {
+                x: width >= 0 ? cropStartX : pos.x,
+                y: height >= 0 ? cropStartY : pos.y,
+                width: Math.abs(width),
+                height: Math.abs(height)
+            };
+
+            redrawCanvas();
+            return;
+        }
     }
 
     // 図形のリサイズ中
@@ -1190,6 +1405,12 @@ function stopDrawing() {
     isDraggingShape = false;
     isResizingShape = false;
     resizeHandle = null;
+
+    // トリミング関連のフラグをリセット
+    isCreatingCropRect = false;
+    isDraggingCrop = false;
+    isResizingCrop = false;
+    cropResizeHandle = null;
 }
 
 // テキスト追加
@@ -1414,9 +1635,13 @@ cropBtn.addEventListener('click', () => {
 
     isCropping = true;
     cropRect = null;
+    isCreatingCropRect = false;
+    isDraggingCrop = false;
+    isResizingCrop = false;
+    cropResizeHandle = null;
     cropControls.style.display = 'flex';
     canvas.style.cursor = 'crosshair';
-    showNotification('トリミング範囲をドラッグして選択してください', 'info');
+    showNotification('トリミング範囲をドラッグして作成。範囲をドラッグで移動、ハンドルでサイズ変更できます', 'info');
 });
 
 // トリミング適用
@@ -1470,6 +1695,10 @@ cropApplyBtn.addEventListener('click', () => {
         baseImage = newImg;
         isCropping = false;
         cropRect = null;
+        isCreatingCropRect = false;
+        isDraggingCrop = false;
+        isResizingCrop = false;
+        cropResizeHandle = null;
         cropControls.style.display = 'none';
         canvas.style.cursor = 'crosshair';
         redrawCanvas();
@@ -1483,6 +1712,10 @@ cropApplyBtn.addEventListener('click', () => {
 cropCancelBtn.addEventListener('click', () => {
     isCropping = false;
     cropRect = null;
+    isCreatingCropRect = false;
+    isDraggingCrop = false;
+    isResizingCrop = false;
+    cropResizeHandle = null;
     cropControls.style.display = 'none';
     canvas.style.cursor = 'crosshair';
     redrawCanvas();
