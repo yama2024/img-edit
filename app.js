@@ -2,9 +2,10 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let isDrawing = false;
-let currentTool = 'brush';
+let currentTool = 'select';
 let currentColor = '#000000';
 let brushSize = 5;
+let eraserSize = 20;
 let fontSize = 24;
 let lastX = 0;
 let lastY = 0;
@@ -60,6 +61,8 @@ const undoBtn = document.getElementById('undoBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
+const eraserSizeSlider = document.getElementById('eraserSize');
+const eraserSizeValue = document.getElementById('eraserSizeValue');
 const fontSizeSlider = document.getElementById('fontSize');
 const fontSizeValue = document.getElementById('fontSizeValue');
 const toolButtons = document.querySelectorAll('.tool-btn');
@@ -143,7 +146,9 @@ toolButtons.forEach(btn => {
         redrawCanvas();
 
         // ツールに応じたカーソルを設定
-        if (currentTool === 'text') {
+        if (currentTool === 'select') {
+            canvas.style.cursor = 'default';
+        } else if (currentTool === 'text') {
             canvas.style.cursor = 'text';
         } else if (currentTool === 'rectangle' || currentTool === 'square' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
             canvas.style.cursor = 'crosshair';
@@ -162,6 +167,12 @@ colorPicker.addEventListener('change', (e) => {
 brushSizeSlider.addEventListener('input', (e) => {
     brushSize = e.target.value;
     brushSizeValue.textContent = brushSize;
+});
+
+// 消しゴムサイズ
+eraserSizeSlider.addEventListener('input', (e) => {
+    eraserSize = e.target.value;
+    eraserSizeValue.textContent = eraserSize;
 });
 
 // フォントサイズ
@@ -784,7 +795,7 @@ function getClickedHandle(x, y, shape) {
 
 // テキストを編集（ダブルクリック時）
 function editText(e) {
-    if (currentTool !== 'text' || !imageLoaded) return;
+    if ((currentTool !== 'text' && currentTool !== 'select') || !imageLoaded) return;
 
     const pos = getMousePos(e);
     const clickedIndex = getClickedTextIndex(pos.x, pos.y);
@@ -834,6 +845,62 @@ function startDrawing(e) {
         cropStartX = pos.x;
         cropStartY = pos.y;
         cropRect = null;
+        return;
+    }
+
+    // 選択ツールの場合
+    if (currentTool === 'select') {
+        if (!imageLoaded) {
+            return; // 画像がない場合は何もしない
+        }
+
+        // 図形の選択/リサイズ/移動をチェック
+        if (selectedShapeIndex !== -1) {
+            const selectedShape = shapeObjects[selectedShapeIndex];
+            const handle = getClickedHandle(pos.x, pos.y, selectedShape);
+
+            if (handle) {
+                // ハンドルをクリック - リサイズモード
+                isResizingShape = true;
+                resizeHandle = handle;
+                shapeStartX = pos.x;
+                shapeStartY = pos.y;
+                return;
+            }
+        }
+
+        // 図形をクリックしたかチェック
+        const clickedShapeIndex = getClickedShapeIndex(pos.x, pos.y);
+        if (clickedShapeIndex !== -1) {
+            // 図形を選択
+            selectedShapeIndex = clickedShapeIndex;
+            selectedTextIndex = -1;
+            isDraggingShape = true;
+            dragStartX = pos.x;
+            dragStartY = pos.y;
+            redrawCanvas();
+            return;
+        }
+
+        // テキストをクリックしたかチェック
+        const clickedTextIndex = getClickedTextIndex(pos.x, pos.y);
+        if (clickedTextIndex !== -1) {
+            // テキストを選択
+            selectedTextIndex = clickedTextIndex;
+            selectedShapeIndex = -1;
+            isDraggingText = true;
+            dragStartX = pos.x;
+            dragStartY = pos.y;
+            redrawCanvas();
+            return;
+        }
+
+        // 何もクリックされていない場合は選択解除
+        if (selectedTextIndex !== -1 || selectedShapeIndex !== -1) {
+            selectedTextIndex = -1;
+            selectedShapeIndex = -1;
+            redrawCanvas();
+        }
         return;
     }
 
@@ -1069,7 +1136,7 @@ function draw(e) {
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(pos2.x, pos2.y);
     ctx.strokeStyle = currentTool === 'eraser' ? 'white' : currentColor;
-    ctx.lineWidth = brushSize;
+    ctx.lineWidth = currentTool === 'eraser' ? eraserSize : brushSize;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
@@ -1588,7 +1655,7 @@ document.addEventListener('keydown', (e) => {
     }
 
     // Deleteキーで選択中のテキストを削除
-    if (e.key === 'Delete' && selectedTextIndex !== -1 && currentTool === 'text') {
+    if (e.key === 'Delete' && selectedTextIndex !== -1 && (currentTool === 'text' || currentTool === 'select')) {
         e.preventDefault();
         textObjects.splice(selectedTextIndex, 1);
         selectedTextIndex = -1;
@@ -1599,7 +1666,7 @@ document.addEventListener('keydown', (e) => {
 
     // Deleteキーで選択中の図形を削除
     if (e.key === 'Delete' && selectedShapeIndex !== -1 &&
-        (currentTool === 'rectangle' || currentTool === 'square' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow')) {
+        (currentTool === 'rectangle' || currentTool === 'square' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow' || currentTool === 'select')) {
         e.preventDefault();
         shapeObjects.splice(selectedShapeIndex, 1);
         selectedShapeIndex = -1;

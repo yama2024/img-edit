@@ -194,7 +194,8 @@
 
             <div class="tool-group">
                 <h3>描画ツール</h3>
-                <button id="brushBtn" class="btn tool-btn active" data-tool="brush">ブラシ</button>
+                <button id="selectBtn" class="btn tool-btn active" data-tool="select">選択</button>
+                <button id="brushBtn" class="btn tool-btn" data-tool="brush">ブラシ</button>
                 <button id="eraserBtn" class="btn tool-btn" data-tool="eraser">消しゴム</button>
                 <button id="textBtn" class="btn tool-btn" data-tool="text">テキスト</button>
             </div>
@@ -240,6 +241,12 @@
                 <h3>線の太さ</h3>
                 <input type="range" id="brushSize" min="1" max="50" value="5">
                 <span id="brushSizeValue">5</span>px
+            </div>
+
+            <div class="tool-group">
+                <h3>消しゴムの大きさ</h3>
+                <input type="range" id="eraserSize" min="1" max="100" value="20">
+                <span id="eraserSizeValue">20</span>px
             </div>
 
             <div class="tool-group">
