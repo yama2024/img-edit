@@ -287,18 +287,49 @@ function drawSelectionHandles(shape) {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
 
-    // 選択枠を描画
-    ctx.strokeStyle = '#667eea';
-    ctx.setLineDash([5, 5]);
-    ctx.strokeRect(shape.x - 2, shape.y - 2, shape.width + 4, shape.height + 4);
-    ctx.setLineDash([]);
+    // 線と矢印の場合は選択枠なし、始点と終点のみ
+    if (shape.type === 'line' || shape.type === 'arrow') {
+        // 始点と終点にハンドルを描画
+        const startX = shape.x;
+        const startY = shape.y;
+        const endX = shape.x + shape.width;
+        const endY = shape.y + shape.height;
 
-    // ハンドルを描画
-    handles.forEach(handle => {
-        ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+        // 線を強調表示
+        ctx.strokeStyle = '#667eea';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 始点のハンドル
+        ctx.fillStyle = '#667eea';
+        ctx.fillRect(startX - handleSize / 2, startY - handleSize / 2, handleSize, handleSize);
         ctx.strokeStyle = '#ffffff';
-        ctx.strokeRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
-    });
+        ctx.strokeRect(startX - handleSize / 2, startY - handleSize / 2, handleSize, handleSize);
+
+        // 終点のハンドル
+        ctx.fillStyle = '#667eea';
+        ctx.fillRect(endX - handleSize / 2, endY - handleSize / 2, handleSize, handleSize);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(endX - handleSize / 2, endY - handleSize / 2, handleSize, handleSize);
+    } else {
+        // 矩形と円の場合は選択枠とハンドルを描画
+        ctx.strokeStyle = '#667eea';
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(shape.x - 2, shape.y - 2, shape.width + 4, shape.height + 4);
+        ctx.setLineDash([]);
+
+        // ハンドルを描画
+        handles.forEach(handle => {
+            ctx.fillStyle = '#667eea';
+            ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+        });
+    }
 }
 
 // 図形のハンドル位置を取得
@@ -529,16 +560,40 @@ function distanceToLine(px, py, x1, y1, x2, y2) {
 
 // ハンドルがクリックされたかチェック
 function getClickedHandle(x, y, shape) {
-    const handles = getShapeHandles(shape);
     const handleSize = 8;
 
-    for (const handle of handles) {
-        if (x >= handle.x - handleSize && x <= handle.x + handleSize &&
-            y >= handle.y - handleSize && y <= handle.y + handleSize) {
-            return handle.type;
+    // 線と矢印の場合は始点と終点のみ
+    if (shape.type === 'line' || shape.type === 'arrow') {
+        const startX = shape.x;
+        const startY = shape.y;
+        const endX = shape.x + shape.width;
+        const endY = shape.y + shape.height;
+
+        // 始点をチェック
+        if (x >= startX - handleSize && x <= startX + handleSize &&
+            y >= startY - handleSize && y <= startY + handleSize) {
+            return 'start';
         }
+
+        // 終点をチェック
+        if (x >= endX - handleSize && x <= endX + handleSize &&
+            y >= endY - handleSize && y <= endY + handleSize) {
+            return 'end';
+        }
+
+        return null;
+    } else {
+        // 矩形と円の場合は8つのハンドル
+        const handles = getShapeHandles(shape);
+
+        for (const handle of handles) {
+            if (x >= handle.x - handleSize && x <= handle.x + handleSize &&
+                y >= handle.y - handleSize && y <= handle.y + handleSize) {
+                return handle.type;
+            }
+        }
+        return null;
     }
-    return null;
 }
 
 // テキストを編集（ダブルクリック時）
@@ -671,33 +726,48 @@ function draw(e) {
         const dx = pos.x - shapeStartX;
         const dy = pos.y - shapeStartY;
 
-        // ハンドルに応じてリサイズ
-        if (resizeHandle === 'nw') {
-            shape.x += dx;
-            shape.y += dy;
-            shape.width -= dx;
-            shape.height -= dy;
-        } else if (resizeHandle === 'ne') {
-            shape.y += dy;
-            shape.width += dx;
-            shape.height -= dy;
-        } else if (resizeHandle === 'sw') {
-            shape.x += dx;
-            shape.width -= dx;
-            shape.height += dy;
-        } else if (resizeHandle === 'se') {
-            shape.width += dx;
-            shape.height += dy;
-        } else if (resizeHandle === 'n') {
-            shape.y += dy;
-            shape.height -= dy;
-        } else if (resizeHandle === 's') {
-            shape.height += dy;
-        } else if (resizeHandle === 'w') {
-            shape.x += dx;
-            shape.width -= dx;
-        } else if (resizeHandle === 'e') {
-            shape.width += dx;
+        // 線と矢印の場合の特別処理
+        if (shape.type === 'line' || shape.type === 'arrow') {
+            if (resizeHandle === 'start') {
+                // 始点を移動
+                shape.x += dx;
+                shape.y += dy;
+                shape.width -= dx;
+                shape.height -= dy;
+            } else if (resizeHandle === 'end') {
+                // 終点を移動
+                shape.width += dx;
+                shape.height += dy;
+            }
+        } else {
+            // 矩形と円の場合のリサイズ処理
+            if (resizeHandle === 'nw') {
+                shape.x += dx;
+                shape.y += dy;
+                shape.width -= dx;
+                shape.height -= dy;
+            } else if (resizeHandle === 'ne') {
+                shape.y += dy;
+                shape.width += dx;
+                shape.height -= dy;
+            } else if (resizeHandle === 'sw') {
+                shape.x += dx;
+                shape.width -= dx;
+                shape.height += dy;
+            } else if (resizeHandle === 'se') {
+                shape.width += dx;
+                shape.height += dy;
+            } else if (resizeHandle === 'n') {
+                shape.y += dy;
+                shape.height -= dy;
+            } else if (resizeHandle === 's') {
+                shape.height += dy;
+            } else if (resizeHandle === 'w') {
+                shape.x += dx;
+                shape.width -= dx;
+            } else if (resizeHandle === 'e') {
+                shape.width += dx;
+            }
         }
 
         shapeStartX = pos.x;
@@ -727,6 +797,19 @@ function draw(e) {
         const width = pos.x - shapeStartX;
         const height = pos.y - shapeStartY;
 
+        // 線と矢印は枠線のみ
+        let shapeFill = hasFill;
+        let shapeStroke = hasStroke;
+        if (currentTool === 'line' || currentTool === 'arrow') {
+            shapeFill = false;
+            shapeStroke = true;
+        }
+
+        // 塗りつぶしと枠線の両方がオフの場合、枠線を強制的にオンにする
+        if (!shapeFill && !shapeStroke) {
+            shapeStroke = true;
+        }
+
         previewShape = {
             type: currentTool,
             x: width >= 0 ? shapeStartX : pos.x,
@@ -736,8 +819,8 @@ function draw(e) {
             fill: fillColor,
             stroke: strokeColor,
             lineWidth: brushSize,
-            hasFill: hasFill,
-            hasStroke: hasStroke
+            hasFill: shapeFill,
+            hasStroke: shapeStroke
         };
 
         redrawCanvas();
@@ -780,11 +863,14 @@ function draw(e) {
 function stopDrawing() {
     // 図形描画が完了した場合
     if (isDrawingShape && previewShape) {
-        // 図形を配列に追加（最小サイズチェック）
-        if (previewShape.width > 5 || previewShape.height > 5) {
+        // 最小サイズチェック（3ピクセル以上）
+        const minSize = 3;
+        if (previewShape.width >= minSize || previewShape.height >= minSize) {
             shapeObjects.push(previewShape);
             selectedShapeIndex = shapeObjects.length - 1;
             showNotification('図形を追加しました', 'success');
+        } else {
+            showNotification('図形が小さすぎます。もう少し大きくドラッグしてください', 'info');
         }
         previewShape = null;
         redrawCanvas();
