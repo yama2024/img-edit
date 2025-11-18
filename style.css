@@ -76,6 +76,30 @@ header h1 {
     transform: translateY(-50%) scale(1.1);
 }
 
+.toggle-toolbar-btn {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-toolbar-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
 /* 左側サイドバー（ツールバー） */
 .toolbar {
     position: fixed;
@@ -90,7 +114,48 @@ header h1 {
     padding: 20px 15px;
     box-shadow: var(--shadow-md);
     z-index: 100;
-    transition: transform var(--transition-normal);
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* 折りたたみ状態 */
+.toolbar.collapsed {
+    width: 60px;
+    padding: 15px 5px;
+}
+
+.toolbar.collapsed .tool-group h3 {
+    display: none;
+}
+
+.toolbar.collapsed .tool-label {
+    display: none;
+}
+
+.toolbar.collapsed .tool-icon {
+    font-size: 20px;
+}
+
+.toolbar.collapsed .btn {
+    padding: 10px;
+    min-width: auto;
+}
+
+.toolbar.collapsed label,
+.toolbar.collapsed input[type="range"],
+.toolbar.collapsed .brush-size-info span,
+.toolbar.collapsed .zoom-value,
+.toolbar.collapsed .zoom-controls input {
+    display: none;
+}
+
+.toolbar.collapsed .color-palette {
+    display: none;
+}
+
+.toolbar.collapsed input[type="color"] {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
 }
 
 .toolbar::-webkit-scrollbar {
@@ -225,6 +290,49 @@ header h1 {
     background: var(--primary-dark);
 }
 
+.tool-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.tool-label {
+    font-size: 13px;
+}
+
+/* ブラシサイズコンテナ */
+.brush-size-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.brush-size-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brush-preview {
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.brush-preview::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: currentColor;
+    transition: all var(--transition-fast);
+}
+
 .btn-edit {
     background: #3498db;
 }
@@ -282,7 +390,12 @@ input[type="range"] {
     background-size: 20px 20px;
     background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     overflow: auto;
-    transition: left var(--transition-normal);
+    transition: left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* ツールバー折りたたみ時のキャンバス */
+.canvas-container.toolbar-collapsed {
+    left: 60px;
 }
 
 .canvas-container.drag-over {

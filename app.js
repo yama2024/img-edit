@@ -78,6 +78,10 @@ const helpBtn = document.getElementById('helpBtn');
 const helpPanel = document.getElementById('helpPanel');
 const helpCloseBtn = document.getElementById('helpCloseBtn');
 const loadingIndicator = document.getElementById('loadingIndicator');
+const toggleToolbarBtn = document.getElementById('toggleToolbar');
+const toolbar = document.querySelector('.toolbar');
+const canvasContainer = document.querySelector('.canvas-container');
+const brushPreview = document.getElementById('brushPreview');
 
 // 初期化
 function init() {
@@ -151,6 +155,7 @@ function renderColorPalette() {
             currentColor = color;
             colorPicker.value = color;
             renderColorPalette(); // activeクラスを更新
+            updateBrushPreview(); // プレビューを更新
             showNotification(`色を選択: ${color}`, 'info');
         });
 
@@ -331,6 +336,42 @@ function hideLoading() {
     loadingIndicator.classList.remove('show');
 }
 
+// ツールバー折りたたみ機能
+let toolbarCollapsed = false;
+
+function toggleToolbar() {
+    toolbarCollapsed = !toolbarCollapsed;
+    toolbar.classList.toggle('collapsed');
+    canvasContainer.classList.toggle('toolbar-collapsed');
+}
+
+toggleToolbarBtn.addEventListener('click', toggleToolbar);
+
+// ブラシプレビューを更新
+function updateBrushPreview() {
+    const size = Math.min(brushSize, 48); // 最大48px
+    brushPreview.style.color = currentTool === 'eraser' ? '#ff0000' : currentColor;
+    brushPreview.style.setProperty('--brush-size', size + 'px');
+
+    // ::afterの疑似要素にサイズを適用
+    const style = document.createElement('style');
+    style.textContent = `
+        #brushPreview::after {
+            width: ${size}px;
+            height: ${size}px;
+        }
+    `;
+
+    // 既存のスタイルを削除して新しいものを追加
+    const oldStyle = document.getElementById('brush-preview-style');
+    if (oldStyle) oldStyle.remove();
+    style.id = 'brush-preview-style';
+    document.head.appendChild(style);
+}
+
+// 初期プレビュー
+updateBrushPreview();
+
 // カスタムカーソルを更新
 function updateCursor() {
     if (currentTool === 'text') {
@@ -370,6 +411,8 @@ toolButtons.forEach(btn => {
 
         // カーソルを更新
         updateCursor();
+        // プレビューを更新
+        updateBrushPreview();
     });
 });
 
@@ -377,6 +420,7 @@ toolButtons.forEach(btn => {
 colorPicker.addEventListener('change', (e) => {
     currentColor = e.target.value;
     addColorToPalette(currentColor); // パレットに追加
+    updateBrushPreview(); // プレビューを更新
 });
 
 // ブラシサイズ
@@ -385,6 +429,8 @@ brushSizeSlider.addEventListener('input', (e) => {
     brushSizeValue.textContent = brushSize;
     // カーソルを更新
     updateCursor();
+    // プレビューを更新
+    updateBrushPreview();
 });
 
 // フォントサイズ
