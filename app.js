@@ -18,6 +18,11 @@ let isDraggingText = false;
 let dragStartX = 0;
 let dragStartY = 0;
 
+// Undo/Redo履歴管理
+let undoStack = [];
+let redoStack = [];
+const MAX_HISTORY = 30; // 最大履歴数
+
 // キャンバスのデフォルトサイズ
 canvas.width = 800;
 canvas.height = 600;
@@ -28,6 +33,8 @@ const uploadBtn = document.getElementById('uploadBtn');
 const pasteBtn = document.getElementById('pasteBtn');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
@@ -65,6 +72,141 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
     }, 3000);
 }
+
+// ========================================
+// Undo/Redo機能
+// ========================================
+
+// 現在の状態を保存
+function saveState() {
+    // 現在のキャンバスの状態を保存
+    const state = {
+        canvasData: canvas.toDataURL(),
+        textObjects: JSON.parse(JSON.stringify(textObjects)), // ディープコピー
+        baseImage: baseImage ? baseImage.src : null,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        imageLoaded: imageLoaded
+    };
+
+    // undoStackに追加
+    undoStack.push(state);
+
+    // 最大履歴数を超えた場合、古い履歴を削除
+    if (undoStack.length > MAX_HISTORY) {
+        undoStack.shift();
+    }
+
+    // 新しい操作が行われたらredoStackをクリア
+    redoStack = [];
+
+    // ボタンの状態を更新
+    updateHistoryButtons();
+}
+
+// Undo実行
+function undo() {
+    if (undoStack.length === 0) return;
+
+    // 現在の状態をredoStackに保存
+    const currentState = {
+        canvasData: canvas.toDataURL(),
+        textObjects: JSON.parse(JSON.stringify(textObjects)),
+        baseImage: baseImage ? baseImage.src : null,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        imageLoaded: imageLoaded
+    };
+    redoStack.push(currentState);
+
+    // undoStackから1つ前の状態を取得
+    const previousState = undoStack.pop();
+
+    // 状態を復元
+    restoreState(previousState);
+
+    // ボタンの状態を更新
+    updateHistoryButtons();
+
+    showNotification('↶ 元に戻しました', 'info');
+}
+
+// Redo実行
+function redo() {
+    if (redoStack.length === 0) return;
+
+    // 現在の状態をundoStackに保存
+    const currentState = {
+        canvasData: canvas.toDataURL(),
+        textObjects: JSON.parse(JSON.stringify(textObjects)),
+        baseImage: baseImage ? baseImage.src : null,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        imageLoaded: imageLoaded
+    };
+    undoStack.push(currentState);
+
+    // redoStackから次の状態を取得
+    const nextState = redoStack.pop();
+
+    // 状態を復元
+    restoreState(nextState);
+
+    // ボタンの状態を更新
+    updateHistoryButtons();
+
+    showNotification('↷ やり直しました', 'info');
+}
+
+// 状態を復元
+function restoreState(state) {
+    // キャンバスサイズを復元
+    canvas.width = state.canvasWidth;
+    canvas.height = state.canvasHeight;
+
+    // キャンバスの描画内容を復元
+    const img = new Image();
+    img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+    };
+    img.src = state.canvasData;
+
+    // テキストオブジェクトを復元
+    textObjects = JSON.parse(JSON.stringify(state.textObjects));
+    selectedTextIndex = -1;
+
+    // ベース画像を復元
+    if (state.baseImage) {
+        const baseImg = new Image();
+        baseImg.onload = () => {
+            baseImage = baseImg;
+        };
+        baseImg.src = state.baseImage;
+    } else {
+        baseImage = null;
+    }
+
+    // imageLoadedフラグを復元
+    imageLoaded = state.imageLoaded;
+
+    // ドロップヒントの表示/非表示を更新
+    if (imageLoaded) {
+        dropHint.classList.add('hidden');
+    } else {
+        dropHint.classList.remove('hidden');
+    }
+}
+
+// Undo/Redoボタンの有効/無効を更新
+function updateHistoryButtons() {
+    undoBtn.disabled = undoStack.length === 0;
+    redoBtn.disabled = redoStack.length === 0;
+}
+
+// Undo/Redoボタンのイベントリスナー
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
 
 // ツール選択
 toolButtons.forEach(btn => {
@@ -238,6 +380,11 @@ function loadImageFromFile(file) {
 
             // ドロップヒントを非表示
             dropHint.classList.add('hidden');
+
+            // 初回の履歴をクリアして、画像読み込み後の状態を最初の履歴として保存
+            undoStack = [];
+            redoStack = [];
+            saveState();
 
             showNotification('画像を読み込みました！', 'success');
         };
@@ -478,6 +625,11 @@ function draw(e) {
 }
 
 function stopDrawing() {
+    // 描画が実際に行われていた場合のみ状態を保存
+    if (isDrawing && (currentTool === 'brush' || currentTool === 'eraser')) {
+        saveState();
+    }
+
     isDrawing = false;
     isDraggingText = false;
 }
@@ -552,6 +704,9 @@ textOkBtn.addEventListener('click', () => {
 
         // キャンバスを再描画
         redrawCanvas();
+
+        // 状態を保存
+        saveState();
     }
 
     // ダイアログを閉じる
@@ -628,7 +783,7 @@ saveBtn.addEventListener('click', () => {
 
 // キャンバスをクリア
 clearBtn.addEventListener('click', () => {
-    if (confirm('キャンバスをクリアしますか？この操作は取り消せません。')) {
+    if (confirm('キャンバスをクリアしますか？')) {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         imageLoaded = false;
@@ -636,6 +791,10 @@ clearBtn.addEventListener('click', () => {
         textObjects = [];
         selectedTextIndex = -1;
         dropHint.classList.remove('hidden');
+
+        // 状態を保存（Undoで復元可能に）
+        saveState();
+
         showNotification('キャンバスをクリアしました', 'info');
     }
 });
@@ -648,19 +807,26 @@ document.addEventListener('keydown', (e) => {
         saveBtn.click();
     }
 
+    // Ctrl+Z で元に戻す（Undo）
+    if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+    }
+
+    // Ctrl+Y または Ctrl+Shift+Z でやり直す（Redo）
+    if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+        e.preventDefault();
+        redo();
+    }
+
     // Deleteキーで選択中のテキストを削除
     if (e.key === 'Delete' && selectedTextIndex !== -1 && currentTool === 'text') {
         e.preventDefault();
         textObjects.splice(selectedTextIndex, 1);
         selectedTextIndex = -1;
         redrawCanvas();
+        saveState(); // 状態を保存
         showNotification('🗑️ テキストを削除しました', 'success');
-    }
-
-    // Ctrl+Z で元に戻す（簡易版）
-    if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        // 注: 完全な元に戻す機能には履歴管理が必要
     }
 });
 
@@ -668,4 +834,5 @@ console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
+console.log('↶↷ Ctrl+Z で元に戻す、Ctrl+Y でやり直す');
 showNotification('画像エディターへようこそ！', 'info');
