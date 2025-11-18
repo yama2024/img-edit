@@ -36,6 +36,19 @@
                         <option value="ヒラギノ角ゴ Pro">ヒラギノ角ゴ Pro</option>
                     </select>
                 </div>
+                <div class="text-input-option">
+                    <label>スタイル:</label>
+                    <div class="text-style-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="fontBold">
+                            <span>太字</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="fontItalic">
+                            <span>斜体</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="text-input-buttons">
                     <button id="textOkBtn" class="btn">OK</button>
                     <button id="textCancelBtn" class="btn btn-secondary">キャンセル</button>
@@ -103,10 +116,18 @@
                 <ul>
                     <li><strong>画像を読み込む：</strong>
                         <ul>
-                            <li>「📁 画像をアップロード」ボタンをクリック</li>
+                            <li>「📁 画像をアップロード」ボタンをクリック、または Ctrl+O (Mac: Cmd+O)</li>
                             <li>画像をキャンバスにドラッグ&ドロップ</li>
                             <li>Ctrl+V (Mac: Cmd+V) でクリップボードから貼り付け</li>
                             <li>「📋 ペースト」ボタンをクリック（クリップボードから）</li>
+                            <li>※ 4096x4096px を超える画像は自動的にリサイズを提案します</li>
+                        </ul>
+                    </li>
+                    <li><strong>ツール切り替え：</strong>
+                        <ul>
+                            <li>1キー：ブラシツール</li>
+                            <li>2キー：消しゴムツール</li>
+                            <li>3キー：テキストツール</li>
                         </ul>
                     </li>
                     <li><strong>編集：</strong> ツールを選択して、キャンバス上で描画またはテキストを追加</li>
@@ -116,14 +137,16 @@
                             <li>テキストをクリックで選択（枠が表示されます）</li>
                             <li>選択したテキストをドラッグで移動</li>
                             <li>ダブルクリックでテキスト内容を編集</li>
+                            <li>フォント、サイズ、色、太字、斜体を設定可能</li>
                             <li>Deleteキーで選択したテキストを削除</li>
                         </ul>
                     </li>
-                    <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
+                    <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード、または Ctrl+S (Mac: Cmd+S)</li>
+                    <li><strong>クリア：</strong> Ctrl+N (Mac: Cmd+N) で新規キャンバス（確認ダイアログ表示）</li>
                     <li><strong>元に戻す/やり直し：</strong>
                         <ul>
-                            <li>Ctrl+Z (Mac: Cmd+Z) で元に戻す</li>
-                            <li>Ctrl+Y または Ctrl+Shift+Z (Mac: Cmd+Y または Cmd+Shift+Z) でやり直し</li>
+                            <li>Ctrl+Z (Mac: Cmd+Z) で元に戻す、または「↶ 元に戻す」ボタン</li>
+                            <li>Ctrl+Y または Ctrl+Shift+Z (Mac: Cmd+Y または Cmd+Shift+Z) でやり直し、または「↷ やり直し」ボタン</li>
                             <li>最大50ステップまで履歴を保持</li>
                         </ul>
                     </li>

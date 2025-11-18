@@ -48,6 +48,8 @@ const notification = document.getElementById('notification');
 const textInputDialog = document.getElementById('textInputDialog');
 const textInput = document.getElementById('textInput');
 const fontFamilySelect = document.getElementById('fontFamily');
+const fontBoldCheckbox = document.getElementById('fontBold');
+const fontItalicCheckbox = document.getElementById('fontItalic');
 const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
 const toggleInstructionsBtn = document.getElementById('toggleInstructions');
@@ -299,13 +301,15 @@ function redrawCanvas() {
 
     // すべてのテキストを描画
     textObjects.forEach((textObj, index) => {
-        ctx.font = `${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
+        // フォントスタイルを構築（italic bold 24px Arial の形式）
+        const fontStyle = textObj.italic ? 'italic' : 'normal';
+        const fontWeight = textObj.bold ? 'bold' : 'normal';
+        ctx.font = `${fontStyle} ${fontWeight} ${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
         ctx.fillStyle = textObj.color;
         ctx.fillText(textObj.text, textObj.x, textObj.y);
 
         // 選択中のテキストには枠を表示
         if (index === selectedTextIndex) {
-            ctx.font = `${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`; // フォント再設定
             const metrics = ctx.measureText(textObj.text);
             const textWidth = metrics.width;
             const textHeight = textObj.fontSize;
@@ -330,16 +334,61 @@ function loadImageFromFile(file) {
     reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-            // キャンバスサイズを画像に合わせる
-            canvas.width = img.width;
-            canvas.height = img.height;
+            // 画像サイズの制限
+            const MAX_WIDTH = 4096;
+            const MAX_HEIGHT = 4096;
+
+            let finalWidth = img.width;
+            let finalHeight = img.height;
+            let needsResize = false;
+
+            // サイズチェック
+            if (img.width > MAX_WIDTH || img.height > MAX_HEIGHT) {
+                needsResize = true;
+                const aspectRatio = img.width / img.height;
+
+                if (img.width > MAX_WIDTH) {
+                    finalWidth = MAX_WIDTH;
+                    finalHeight = Math.round(MAX_WIDTH / aspectRatio);
+                }
+
+                if (finalHeight > MAX_HEIGHT) {
+                    finalHeight = MAX_HEIGHT;
+                    finalWidth = Math.round(MAX_HEIGHT * aspectRatio);
+                }
+
+                // ユーザーに確認
+                const shouldResize = confirm(
+                    `画像サイズが大きすぎます（${img.width}x${img.height}px）。\n` +
+                    `メモリ節約のため ${finalWidth}x${finalHeight}px にリサイズしますか？\n\n` +
+                    `キャンセルすると元のサイズで読み込みますが、動作が重くなる可能性があります。`
+                );
+
+                if (!shouldResize) {
+                    finalWidth = img.width;
+                    finalHeight = img.height;
+                    needsResize = false;
+                }
+            }
+
+            // キャンバスサイズを設定
+            canvas.width = finalWidth;
+            canvas.height = finalHeight;
 
             // ベースキャンバスを作成して画像を描画
             baseCanvas = document.createElement('canvas');
-            baseCanvas.width = img.width;
-            baseCanvas.height = img.height;
+            baseCanvas.width = finalWidth;
+            baseCanvas.height = finalHeight;
             const baseCtx = baseCanvas.getContext('2d');
-            baseCtx.drawImage(img, 0, 0);
+
+            // 画像をリサイズして描画（必要な場合）
+            if (needsResize) {
+                baseCtx.drawImage(img, 0, 0, finalWidth, finalHeight);
+                showNotification(`画像をリサイズして読み込みました（${finalWidth}x${finalHeight}px）`, 'success');
+            } else {
+                baseCtx.drawImage(img, 0, 0);
+                showNotification('画像を読み込みました！', 'success');
+            }
 
             // 既存のテキストをクリア
             textObjects = [];
@@ -352,8 +401,6 @@ function loadImageFromFile(file) {
 
             // ドロップヒントを非表示
             dropHint.classList.add('hidden');
-
-            showNotification('画像を読み込みました！', 'success');
 
             // 履歴に保存
             saveHistory();
@@ -501,6 +548,8 @@ function editText(e) {
         fontSizeValue.textContent = fontSize;
         colorPicker.value = currentColor;
         fontFamilySelect.value = currentFontFamily;
+        fontBoldCheckbox.checked = textObj.bold || false;
+        fontItalicCheckbox.checked = textObj.italic || false;
 
         // 編集モードとして位置を保持
         pendingTextPos = { x: textObj.x, y: textObj.y, editingIndex: clickedIndex };
@@ -634,6 +683,8 @@ function addText(e) {
     // ダイアログを表示
     textInputDialog.classList.add('show');
     textInput.value = '';
+    fontBoldCheckbox.checked = false;
+    fontItalicCheckbox.checked = false;
     textInput.focus();
 }
 
@@ -657,7 +708,9 @@ textOkBtn.addEventListener('click', () => {
                 y: pendingTextPos.y,
                 fontSize: fontSize,
                 color: currentColor,
-                fontFamily: currentFontFamily
+                fontFamily: currentFontFamily,
+                bold: fontBoldCheckbox.checked,
+                italic: fontItalicCheckbox.checked
             };
             showNotification('テキストを更新しました', 'success');
         } else {
@@ -668,7 +721,9 @@ textOkBtn.addEventListener('click', () => {
                 y: pendingTextPos.y,
                 fontSize: fontSize,
                 color: currentColor,
-                fontFamily: currentFontFamily
+                fontFamily: currentFontFamily,
+                bold: fontBoldCheckbox.checked,
+                italic: fontItalicCheckbox.checked
             });
             showNotification('テキストを追加しました', 'success');
         }
@@ -769,10 +824,27 @@ clearBtn.addEventListener('click', () => {
 
 // ショートカットキー
 document.addEventListener('keydown', (e) => {
+    // テキスト入力中は一部のショートカットを無効化
+    const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+
     // Ctrl+S で保存
     if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         saveBtn.click();
+    }
+
+    // Ctrl+O で画像を開く
+    if (e.ctrlKey && e.key === 'o') {
+        e.preventDefault();
+        uploadBtn.click();
+    }
+
+    // Ctrl+N で新規キャンバス（クリア）
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        if (confirm('キャンバスをクリアしますか？すべての編集内容が削除されます。')) {
+            clearBtn.click();
+        }
     }
 
     // Deleteキーで選択中のテキストを削除
@@ -796,11 +868,40 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         redo();
     }
+
+    // テキスト入力中でない場合のみ、数字キーでツール切り替え
+    if (!isTyping) {
+        // 1キーでブラシツール
+        if (e.key === '1') {
+            e.preventDefault();
+            document.querySelector('[data-tool="brush"]').click();
+            showNotification('ブラシツールを選択', 'info');
+        }
+        // 2キーで消しゴムツール
+        if (e.key === '2') {
+            e.preventDefault();
+            document.querySelector('[data-tool="eraser"]').click();
+            showNotification('消しゴムツールを選択', 'info');
+        }
+        // 3キーでテキストツール
+        if (e.key === '3') {
+            e.preventDefault();
+            document.querySelector('[data-tool="text"]').click();
+            showNotification('テキストツールを選択', 'info');
+        }
+    }
 });
 
 console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
+console.log('⌨️ キーボードショートカット:');
+console.log('  - Ctrl+O: 画像を開く');
+console.log('  - Ctrl+S: 画像を保存');
+console.log('  - Ctrl+N: 新規キャンバス（クリア）');
+console.log('  - Ctrl+Z: 元に戻す');
+console.log('  - Ctrl+Y / Ctrl+Shift+Z: やり直し');
+console.log('  - 1/2/3: ツール切り替え（ブラシ/消しゴム/テキスト）');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
-console.log('↩️ Ctrl+Z で元に戻す、Ctrl+Y / Ctrl+Shift+Z でやり直し');
+console.log('💡 テキストは太字・斜体の設定が可能です！');
 showNotification('画像エディターへようこそ！', 'info');
