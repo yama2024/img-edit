@@ -157,38 +157,47 @@ header h1 {
     color: #666;
 }
 
-.size-settings-container {
+/* 色とサイズを横並びに */
+.color-size-group {
     display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
+    gap: 20px;
 }
 
+.color-section,
+.size-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.color-section h3,
+.size-section h3 {
+    margin-bottom: 5px;
+}
+
+/* サイズ設定を縦並びに */
 .size-setting {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 1;
-    min-width: 0;
 }
 
 .size-setting label {
-    font-size: 0.8em;
+    font-size: 0.85em;
     color: #666;
     font-weight: 600;
-    white-space: nowrap;
-    min-width: fit-content;
+    min-width: 50px;
 }
 
 .size-setting input[type="range"] {
     flex: 1;
-    min-width: 60px;
 }
 
 .size-setting span {
     font-size: 0.85em;
     color: #333;
     font-weight: 500;
-    white-space: nowrap;
     min-width: 40px;
 }
 
