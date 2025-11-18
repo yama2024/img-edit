@@ -179,6 +179,23 @@
                 <button id="brushBtn" class="btn tool-btn active" data-tool="brush">ブラシ</button>
                 <button id="eraserBtn" class="btn tool-btn" data-tool="eraser">消しゴム</button>
                 <button id="textBtn" class="btn tool-btn" data-tool="text">テキスト</button>
+                <button id="rectangleBtn" class="btn tool-btn" data-tool="rectangle">矩形</button>
+                <button id="circleBtn" class="btn tool-btn" data-tool="circle">円</button>
+                <button id="lineBtn" class="btn tool-btn" data-tool="line">直線</button>
+            </div>
+
+            <div class="tool-group" id="shapeOptions" style="display: none;">
+                <h3>図形オプション</h3>
+                <div class="shape-mode-toggle">
+                    <button id="fillModeBtn" class="btn shape-mode-btn active" data-mode="fill">
+                        <span class="btn-icon">■</span>
+                        塗りつぶし
+                    </button>
+                    <button id="strokeModeBtn" class="btn shape-mode-btn" data-mode="stroke">
+                        <span class="btn-icon">□</span>
+                        枠線のみ
+                    </button>
+                </div>
             </div>
 
             <div class="tool-group">
@@ -255,7 +272,15 @@
                         <li>Deleteキーで選択したテキストを削除</li>
                     </ul>
                 </li>
-                <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
+                <li><strong>図形描画：</strong>
+                    <ul>
+                        <li>矩形・円・直線ツールを選択</li>
+                        <li>ドラッグして図形を描画</li>
+                        <li>Shiftキーを押しながらで正方形・正円を描画</li>
+                        <li>塗りつぶし/枠線のみを選択可能</li>
+                    </ul>
+                </li>
+                <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード（PNG/JPEG/WebP形式）</li>
             </ul>
         </div>
     </div>

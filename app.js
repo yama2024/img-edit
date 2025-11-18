@@ -19,6 +19,14 @@ let isDraggingText = false;
 let dragStartX = 0;
 let dragStartY = 0;
 
+// 図形描画管理
+let shapeMode = 'fill'; // 'fill' または 'stroke'
+let isDrawingShape = false;
+let shapeStartX = 0;
+let shapeStartY = 0;
+let tempCanvas = null; // 描画プレビュー用の一時キャンバス
+let tempCtx = null;
+
 // Undo/Redo履歴管理
 let undoStack = [];
 let redoStack = [];
@@ -67,11 +75,21 @@ const qualityGroup = document.getElementById('qualityGroup');
 const saveConfirmBtn = document.getElementById('saveConfirmBtn');
 const saveCancelBtn = document.getElementById('saveCancelBtn');
 const brushColorPresets = document.querySelectorAll('.brush-color-preset');
+const shapeOptions = document.getElementById('shapeOptions');
+const fillModeBtn = document.getElementById('fillModeBtn');
+const strokeModeBtn = document.getElementById('strokeModeBtn');
+const shapeModeButtons = document.querySelectorAll('.shape-mode-btn');
 
 // 初期化
 function init() {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 一時キャンバスを作成（図形プレビュー用）
+    tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    tempCtx = tempCanvas.getContext('2d');
 }
 
 init();
@@ -228,12 +246,28 @@ toolButtons.forEach(btn => {
         btn.classList.add('active');
         currentTool = btn.dataset.tool;
 
+        // 図形ツールの場合は図形オプションを表示
+        if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line') {
+            shapeOptions.style.display = 'flex';
+        } else {
+            shapeOptions.style.display = 'none';
+        }
+
         // ツールに応じたカーソルを設定
         if (currentTool === 'text') {
             canvas.style.cursor = 'text';
         } else {
             canvas.style.cursor = 'crosshair';
         }
+    });
+});
+
+// 図形モード選択
+shapeModeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        shapeModeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        shapeMode = btn.dataset.mode;
     });
 });
 
@@ -658,6 +692,18 @@ function startDrawing(e) {
         return;
     }
 
+    // 図形ツールの場合
+    if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line') {
+        if (!imageLoaded) {
+            showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+            return;
+        }
+        isDrawingShape = true;
+        shapeStartX = pos.x;
+        shapeStartY = pos.y;
+        return;
+    }
+
     // 画像がロードされていない場合は警告（ブラシ、消しゴム）
     if (!imageLoaded && (currentTool === 'brush' || currentTool === 'eraser')) {
         showNotification('先に画像をアップロードまたはペーストしてください', 'info');
@@ -693,6 +739,23 @@ function draw(e) {
         return;
     }
 
+    // 図形描画中のプレビュー
+    if (isDrawingShape) {
+        // 一時キャンバスをクリア
+        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+        // 現在のキャンバスを一時キャンバスにコピー
+        tempCtx.drawImage(canvas, 0, 0);
+
+        // プレビューを描画
+        drawShapePreview(tempCtx, shapeStartX, shapeStartY, pos.x, pos.y, e.shiftKey);
+
+        // メインキャンバスに一時キャンバスを描画
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(tempCanvas, 0, 0);
+        return;
+    }
+
     if (!isDrawing) return;
     if (currentTool === 'text') return;
 
@@ -717,7 +780,75 @@ function draw(e) {
     lastY = pos2.y;
 }
 
-function stopDrawing() {
+// 図形プレビュー描画
+function drawShapePreview(context, startX, startY, endX, endY, isShiftKey) {
+    context.strokeStyle = currentColor;
+    context.fillStyle = currentColor;
+    context.lineWidth = brushSize;
+    context.globalAlpha = brushOpacity;
+
+    if (currentTool === 'rectangle') {
+        let width = endX - startX;
+        let height = endY - startY;
+
+        // Shiftキーで正方形
+        if (isShiftKey) {
+            const size = Math.min(Math.abs(width), Math.abs(height));
+            width = width >= 0 ? size : -size;
+            height = height >= 0 ? size : -size;
+        }
+
+        if (shapeMode === 'fill') {
+            context.fillRect(startX, startY, width, height);
+        } else {
+            context.strokeRect(startX, startY, width, height);
+        }
+    } else if (currentTool === 'circle') {
+        const radiusX = Math.abs(endX - startX) / 2;
+        const radiusY = Math.abs(endY - startY) / 2;
+        const centerX = startX + (endX - startX) / 2;
+        const centerY = startY + (endY - startY) / 2;
+
+        context.beginPath();
+        if (isShiftKey) {
+            // Shiftキーで正円
+            const radius = Math.min(radiusX, radiusY);
+            context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        } else {
+            // 楕円
+            context.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+        }
+
+        if (shapeMode === 'fill') {
+            context.fill();
+        } else {
+            context.stroke();
+        }
+    } else if (currentTool === 'line') {
+        context.beginPath();
+        context.moveTo(startX, startY);
+        context.lineTo(endX, endY);
+        context.stroke();
+    }
+
+    context.globalAlpha = 1.0;
+}
+
+// 図形最終描画
+function drawShapeFinal(startX, startY, endX, endY, isShiftKey) {
+    drawShapePreview(ctx, startX, startY, endX, endY, isShiftKey);
+}
+
+function stopDrawing(e) {
+    // 図形描画の確定
+    if (isDrawingShape) {
+        const pos = getMousePos(e);
+        drawShapeFinal(shapeStartX, shapeStartY, pos.x, pos.y, e ? e.shiftKey : false);
+        isDrawingShape = false;
+        saveState();
+        return;
+    }
+
     // 描画が実際に行われていた場合のみ状態を保存
     if (isDrawing && (currentTool === 'brush' || currentTool === 'eraser')) {
         saveState();
@@ -980,5 +1111,6 @@ console.log('🎨 画像エディターが読み込まれました！');
 console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
+console.log('🔷 図形ツール: ドラッグで描画、Shiftキーで正方形/正円');
 console.log('↶↷ Ctrl+Z で元に戻す、Ctrl+Y でやり直す');
 showNotification('画像エディターへようこそ！', 'info');

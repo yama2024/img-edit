@@ -119,6 +119,34 @@ header h1 {
     background: #5568d3;
 }
 
+/* 図形モード切り替え */
+.shape-mode-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.shape-mode-btn {
+    flex: 1;
+    background: #ecf0f1;
+    color: #7f8c8d;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.shape-mode-btn.active {
+    background: #667eea;
+    color: white;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.shape-mode-btn:hover {
+    background: #bdc3c7;
+}
+
+.shape-mode-btn.active:hover {
+    background: #5568d3;
+}
+
 #colorPicker {
     width: 60px;
     height: 40px;
