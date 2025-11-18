@@ -43,7 +43,10 @@ const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
 const dialogFontSize = document.getElementById('dialogFontSize');
 const dialogFontSizeValue = document.getElementById('dialogFontSizeValue');
+const dialogFontSizeInput = document.getElementById('dialogFontSizeInput');
 const dialogColorPicker = document.getElementById('dialogColorPicker');
+const textPreview = document.getElementById('textPreview');
+const colorPresets = document.querySelectorAll('.color-preset');
 
 // 初期化
 function init() {
@@ -98,8 +101,67 @@ fontSizeSlider.addEventListener('input', (e) => {
 
 // ダイアログ内のフォントサイズスライダー
 dialogFontSize.addEventListener('input', (e) => {
-    dialogFontSizeValue.textContent = e.target.value;
+    const value = e.target.value;
+    dialogFontSizeValue.textContent = value;
+    dialogFontSizeInput.value = value;
+    updateTextPreview();
 });
+
+// ダイアログ内のフォントサイズ数値入力
+dialogFontSizeInput.addEventListener('input', (e) => {
+    let value = parseInt(e.target.value);
+    if (value < 10) value = 10;
+    if (value > 100) value = 100;
+    if (isNaN(value)) value = 24;
+
+    dialogFontSize.value = value;
+    dialogFontSizeValue.textContent = value;
+    updateTextPreview();
+});
+
+// ダイアログ内のカラーピッカー
+dialogColorPicker.addEventListener('input', (e) => {
+    updateColorPresetSelection(e.target.value);
+    updateTextPreview();
+});
+
+// プリセット色ボタン
+colorPresets.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const color = btn.dataset.color;
+        dialogColorPicker.value = color;
+        updateColorPresetSelection(color);
+        updateTextPreview();
+    });
+});
+
+// テキスト入力のリアルタイムプレビュー
+textInput.addEventListener('input', () => {
+    updateTextPreview();
+});
+
+// プレビューを更新する関数
+function updateTextPreview() {
+    const text = textInput.value.trim();
+    const fontSize = dialogFontSize.value;
+    const color = dialogColorPicker.value;
+
+    textPreview.textContent = text || 'サンプルテキスト';
+    textPreview.style.fontSize = fontSize + 'px';
+    textPreview.style.color = color;
+}
+
+// カラープリセットの選択状態を更新
+function updateColorPresetSelection(color) {
+    colorPresets.forEach(btn => {
+        if (btn.dataset.color.toUpperCase() === color.toUpperCase()) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
+}
 
 // 画像アップロード
 uploadBtn.addEventListener('click', () => {
@@ -317,7 +379,14 @@ function editText(e) {
         // ダイアログ内のフォントサイズと色を設定
         dialogFontSize.value = textObj.fontSize;
         dialogFontSizeValue.textContent = textObj.fontSize;
+        dialogFontSizeInput.value = textObj.fontSize;
         dialogColorPicker.value = textObj.color;
+
+        // カラープリセットの選択状態を更新
+        updateColorPresetSelection(textObj.color);
+
+        // プレビューを更新
+        updateTextPreview();
 
         // 編集モードとして位置を保持
         pendingTextPos = { x: textObj.x, y: textObj.y, editingIndex: clickedIndex };
@@ -430,7 +499,14 @@ function addText(e) {
     textInput.value = '';
     dialogFontSize.value = fontSize;
     dialogFontSizeValue.textContent = fontSize;
+    dialogFontSizeInput.value = fontSize;
     dialogColorPicker.value = currentColor;
+
+    // カラープリセットの選択状態を更新
+    updateColorPresetSelection(currentColor);
+
+    // プレビューを更新
+    updateTextPreview();
 
     textInputDialog.classList.add('show');
     textInput.focus();
@@ -441,7 +517,7 @@ textOkBtn.addEventListener('click', () => {
     const text = textInput.value.trim();
 
     if (text && pendingTextPos) {
-        // ダイアログ内の値を取得
+        // ダイアログ内の値を取得（数値入力とスライダーは同期されている）
         const dialogFontSizeVal = parseInt(dialogFontSize.value);
         const dialogColorVal = dialogColorPicker.value;
 
@@ -454,7 +530,7 @@ textOkBtn.addEventListener('click', () => {
                 fontSize: dialogFontSizeVal,
                 color: dialogColorVal
             };
-            showNotification('テキストを更新しました', 'success');
+            showNotification('✓ テキストを更新しました', 'success');
         } else {
             // 新しいテキストを追加
             textObjects.push({
@@ -464,7 +540,7 @@ textOkBtn.addEventListener('click', () => {
                 fontSize: dialogFontSizeVal,
                 color: dialogColorVal
             });
-            showNotification('テキストを追加しました', 'success');
+            showNotification('✓ テキストを追加しました', 'success');
         }
 
         // ツールバーの値も更新
@@ -578,7 +654,7 @@ document.addEventListener('keydown', (e) => {
         textObjects.splice(selectedTextIndex, 1);
         selectedTextIndex = -1;
         redrawCanvas();
-        showNotification('テキストを削除しました', 'success');
+        showNotification('🗑️ テキストを削除しました', 'success');
     }
 
     // Ctrl+Z で元に戻す（簡易版）
