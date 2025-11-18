@@ -1004,18 +1004,29 @@ function draw(e) {
     if (isDrawingShape) {
         let width = pos.x - shapeStartX;
         let height = pos.y - shapeStartY;
+        let finalWidth, finalHeight, finalX, finalY;
 
         // 正方形の場合は縦横比を1:1に固定
         if (currentTool === 'square') {
+            // 縦横のうち大きい方のサイズを使用
             const size = Math.max(Math.abs(width), Math.abs(height));
-            width = width >= 0 ? size : -size;
-            height = height >= 0 ? size : -size;
-        }
 
-        const finalWidth = Math.abs(width);
-        const finalHeight = Math.abs(height);
-        const finalX = width >= 0 ? shapeStartX : shapeStartX - finalWidth;
-        const finalY = height >= 0 ? shapeStartY : shapeStartY - finalHeight;
+            // 各方向の符号を保持してサイズを設定
+            const signX = width >= 0 ? 1 : -1;
+            const signY = height >= 0 ? 1 : -1;
+
+            // 正方形のサイズと位置を計算
+            finalWidth = size;
+            finalHeight = size;
+            finalX = signX >= 0 ? shapeStartX : shapeStartX - size;
+            finalY = signY >= 0 ? shapeStartY : shapeStartY - size;
+        } else {
+            // 通常の図形（矩形、円など）
+            finalWidth = Math.abs(width);
+            finalHeight = Math.abs(height);
+            finalX = width >= 0 ? shapeStartX : pos.x;
+            finalY = height >= 0 ? shapeStartY : pos.y;
+        }
 
         previewShape = {
             type: currentTool,
