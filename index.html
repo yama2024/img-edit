@@ -209,48 +209,46 @@
                 <button id="arrowBtn" class="btn tool-btn" data-tool="arrow">矢印</button>
             </div>
 
-            <div class="tool-group color-size-group">
-                <div class="color-fill-section">
-                    <h3>色・塗り・枠線</h3>
-                    <label>
-                        <input type="checkbox" id="fillShape" checked>
-                        塗りつぶし
-                    </label>
-                    <label>
-                        <input type="checkbox" id="strokeShape" checked>
-                        枠線
-                    </label>
-                    <div class="color-setting">
-                        <input type="color" id="colorPicker" value="#000000">
-                        <label for="colorPicker">描画</label>
-                    </div>
-                    <div class="color-setting">
-                        <input type="color" id="fillColorPicker" value="#3498db">
-                        <label for="fillColorPicker">塗り</label>
-                    </div>
-                    <div class="color-setting">
-                        <input type="color" id="strokeColorPicker" value="#000000">
-                        <label for="strokeColorPicker">枠線</label>
-                    </div>
+            <div class="tool-group">
+                <h3>色・塗り・枠線</h3>
+                <label>
+                    <input type="checkbox" id="fillShape" checked>
+                    塗りつぶし
+                </label>
+                <label>
+                    <input type="checkbox" id="strokeShape" checked>
+                    枠線
+                </label>
+                <div class="color-setting">
+                    <input type="color" id="colorPicker" value="#000000">
+                    <label for="colorPicker">描画</label>
                 </div>
+                <div class="color-setting">
+                    <input type="color" id="fillColorPicker" value="#3498db">
+                    <label for="fillColorPicker">塗り</label>
+                </div>
+                <div class="color-setting">
+                    <input type="color" id="strokeColorPicker" value="#000000">
+                    <label for="strokeColorPicker">枠線</label>
+                </div>
+            </div>
 
-                <div class="size-section">
-                    <h3>サイズ</h3>
-                    <div class="size-setting">
-                        <label>線</label>
-                        <input type="range" id="brushSize" min="1" max="50" value="5">
-                        <span id="brushSizeValue">5</span>px
-                    </div>
-                    <div class="size-setting">
-                        <label>消ゴム</label>
-                        <input type="range" id="eraserSize" min="1" max="100" value="20">
-                        <span id="eraserSizeValue">20</span>px
-                    </div>
-                    <div class="size-setting">
-                        <label>文字</label>
-                        <input type="range" id="fontSize" min="10" max="100" value="24">
-                        <span id="fontSizeValue">24</span>px
-                    </div>
+            <div class="tool-group">
+                <h3>サイズ</h3>
+                <div class="size-setting">
+                    <label>線</label>
+                    <input type="range" id="brushSize" min="1" max="50" value="5">
+                    <span id="brushSizeValue">5</span>px
+                </div>
+                <div class="size-setting">
+                    <label>消ゴム</label>
+                    <input type="range" id="eraserSize" min="1" max="100" value="20">
+                    <span id="eraserSizeValue">20</span>px
+                </div>
+                <div class="size-setting">
+                    <label>文字</label>
+                    <input type="range" id="fontSize" min="10" max="100" value="24">
+                    <span id="fontSizeValue">24</span>px
                 </div>
             </div>
         </div>
