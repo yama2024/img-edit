@@ -144,7 +144,8 @@ header h1 {
 .toolbar.collapsed input[type="range"],
 .toolbar.collapsed .brush-size-info span,
 .toolbar.collapsed .zoom-value,
-.toolbar.collapsed .zoom-controls input {
+.toolbar.collapsed .zoom-controls input,
+.toolbar.collapsed input[type="checkbox"] {
     display: none;
 }
 

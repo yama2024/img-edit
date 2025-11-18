@@ -79,6 +79,18 @@
                             <kbd>3</kbd>
                             <span>テキスト</span>
                         </div>
+                        <div class="shortcut-item">
+                            <kbd>4</kbd>
+                            <span>スポイト</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>5-8</kbd>
+                            <span>図形ツール</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Alt</kbd> + <kbd>クリック</kbd>
+                            <span>色を抽出</span>
+                        </div>
                     </div>
                     <div class="shortcut-section">
                         <h3>ズーム & パン</h3>
@@ -160,12 +172,48 @@
                     <span class="tool-icon">📝</span>
                     <span class="tool-label">テキスト</span>
                 </button>
+                <button id="eyedropperBtn" class="btn tool-btn" data-tool="eyedropper" title="スポイトツール (4)">
+                    <span class="tool-icon">💧</span>
+                    <span class="tool-label">スポイト</span>
+                </button>
+                <button id="rectangleBtn" class="btn tool-btn" data-tool="rectangle" title="矩形ツール (5)">
+                    <span class="tool-icon">▭</span>
+                    <span class="tool-label">矩形</span>
+                </button>
+                <button id="circleBtn" class="btn tool-btn" data-tool="circle" title="円ツール (6)">
+                    <span class="tool-icon">○</span>
+                    <span class="tool-label">円</span>
+                </button>
+                <button id="lineBtn" class="btn tool-btn" data-tool="line" title="直線ツール (7)">
+                    <span class="tool-icon">─</span>
+                    <span class="tool-label">直線</span>
+                </button>
+                <button id="arrowBtn" class="btn tool-btn" data-tool="arrow" title="矢印ツール (8)">
+                    <span class="tool-icon">→</span>
+                    <span class="tool-label">矢印</span>
+                </button>
             </div>
 
             <div class="tool-group">
                 <h3>編集</h3>
                 <button id="undoBtn" class="btn btn-edit" disabled>↶ 元に戻す</button>
                 <button id="redoBtn" class="btn btn-edit" disabled>↷ やり直し</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>変形</h3>
+                <button id="rotateLeftBtn" class="btn">↺ 左90°回転</button>
+                <button id="rotateRightBtn" class="btn">↻ 右90°回転</button>
+                <button id="flipHorizontalBtn" class="btn">⇆ 水平反転</button>
+                <button id="flipVerticalBtn" class="btn">⇅ 垂直反転</button>
+            </div>
+
+            <div class="tool-group">
+                <h3>図形オプション</h3>
+                <label>
+                    <input type="checkbox" id="shapeFill">
+                    <span>塗りつぶし</span>
+                </label>
             </div>
 
             <div class="tool-group">

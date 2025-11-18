@@ -10,6 +10,13 @@ let lastX = 0;
 let lastY = 0;
 let imageLoaded = false;
 
+// 図形描画用の変数
+let shapeStartX = 0;
+let shapeStartY = 0;
+let isDrawingShape = false;
+let shapeFill = false;
+let previewCanvas = null; // プレビュー用の一時キャンバス
+
 // テキストレイヤー管理
 let textObjects = [];
 let selectedTextIndex = -1;
@@ -82,6 +89,20 @@ const toggleToolbarBtn = document.getElementById('toggleToolbar');
 const toolbar = document.querySelector('.toolbar');
 const canvasContainer = document.querySelector('.canvas-container');
 const brushPreview = document.getElementById('brushPreview');
+
+// 新しいツールボタンとオプション
+const eyedropperBtn = document.getElementById('eyedropperBtn');
+const rectangleBtn = document.getElementById('rectangleBtn');
+const circleBtn = document.getElementById('circleBtn');
+const lineBtn = document.getElementById('lineBtn');
+const arrowBtn = document.getElementById('arrowBtn');
+const shapeFillCheckbox = document.getElementById('shapeFill');
+
+// 変形ボタン
+const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+const rotateRightBtn = document.getElementById('rotateRightBtn');
+const flipHorizontalBtn = document.getElementById('flipHorizontalBtn');
+const flipVerticalBtn = document.getElementById('flipVerticalBtn');
 
 // 初期化
 function init() {
@@ -376,6 +397,8 @@ updateBrushPreview();
 function updateCursor() {
     if (currentTool === 'text') {
         canvas.style.cursor = 'text';
+    } else if (currentTool === 'eyedropper') {
+        canvas.style.cursor = 'crosshair';
     } else if (currentTool === 'brush' || currentTool === 'eraser') {
         // ブラシサイズに応じた円形カーソルを作成
         const cursorSize = Math.min(Math.max(brushSize * 2, 16), 64); // 16-64pxの範囲
@@ -399,6 +422,365 @@ function updateCursor() {
         canvas.style.cursor = `url(${cursorUrl}) ${cursorSize / 2} ${cursorSize / 2}, crosshair`;
     } else {
         canvas.style.cursor = 'crosshair';
+    }
+}
+
+// ========================================
+// 回転・反転機能
+// ========================================
+
+// 左に90度回転
+function rotateLeft() {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードしてください', 'info');
+        return;
+    }
+
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
+
+    // 新しいキャンバスサイズ（幅と高さを入れ替え）
+    canvas.width = oldHeight;
+    canvas.height = oldWidth;
+
+    // baseCanvasを回転
+    const rotatedCanvas = document.createElement('canvas');
+    rotatedCanvas.width = oldHeight;
+    rotatedCanvas.height = oldWidth;
+    const rotatedCtx = rotatedCanvas.getContext('2d');
+
+    rotatedCtx.save();
+    rotatedCtx.translate(oldHeight / 2, oldWidth / 2);
+    rotatedCtx.rotate(-Math.PI / 2);
+    rotatedCtx.drawImage(baseCanvas, -oldWidth / 2, -oldHeight / 2);
+    rotatedCtx.restore();
+
+    baseCanvas = rotatedCanvas;
+
+    // テキストオブジェクトの座標を変換
+    textObjects.forEach(textObj => {
+        const oldX = textObj.x;
+        const oldY = textObj.y;
+        textObj.x = oldY;
+        textObj.y = oldWidth - oldX;
+    });
+
+    redrawCanvas();
+    saveHistory();
+    showNotification('左に90度回転しました', 'success');
+}
+
+// 右に90度回転
+function rotateRight() {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードしてください', 'info');
+        return;
+    }
+
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
+
+    // 新しいキャンバスサイズ（幅と高さを入れ替え）
+    canvas.width = oldHeight;
+    canvas.height = oldWidth;
+
+    // baseCanvasを回転
+    const rotatedCanvas = document.createElement('canvas');
+    rotatedCanvas.width = oldHeight;
+    rotatedCanvas.height = oldWidth;
+    const rotatedCtx = rotatedCanvas.getContext('2d');
+
+    rotatedCtx.save();
+    rotatedCtx.translate(oldHeight / 2, oldWidth / 2);
+    rotatedCtx.rotate(Math.PI / 2);
+    rotatedCtx.drawImage(baseCanvas, -oldWidth / 2, -oldHeight / 2);
+    rotatedCtx.restore();
+
+    baseCanvas = rotatedCanvas;
+
+    // テキストオブジェクトの座標を変換
+    textObjects.forEach(textObj => {
+        const oldX = textObj.x;
+        const oldY = textObj.y;
+        textObj.x = oldHeight - oldY;
+        textObj.y = oldX;
+    });
+
+    redrawCanvas();
+    saveHistory();
+    showNotification('右に90度回転しました', 'success');
+}
+
+// 水平反転
+function flipHorizontal() {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードしてください', 'info');
+        return;
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // baseCanvasを反転
+    const flippedCanvas = document.createElement('canvas');
+    flippedCanvas.width = width;
+    flippedCanvas.height = height;
+    const flippedCtx = flippedCanvas.getContext('2d');
+
+    flippedCtx.save();
+    flippedCtx.translate(width, 0);
+    flippedCtx.scale(-1, 1);
+    flippedCtx.drawImage(baseCanvas, 0, 0);
+    flippedCtx.restore();
+
+    baseCanvas = flippedCanvas;
+
+    // テキストオブジェクトの座標を変換
+    textObjects.forEach(textObj => {
+        textObj.x = width - textObj.x;
+        // テキストの幅を考慮
+        const fontStyle = textObj.italic ? 'italic' : 'normal';
+        const fontWeight = textObj.bold ? 'bold' : 'normal';
+        ctx.font = `${fontStyle} ${fontWeight} ${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
+        const metrics = ctx.measureText(textObj.text);
+        textObj.x -= metrics.width;
+    });
+
+    redrawCanvas();
+    saveHistory();
+    showNotification('水平反転しました', 'success');
+}
+
+// 垂直反転
+function flipVertical() {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードしてください', 'info');
+        return;
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // baseCanvasを反転
+    const flippedCanvas = document.createElement('canvas');
+    flippedCanvas.width = width;
+    flippedCanvas.height = height;
+    const flippedCtx = flippedCanvas.getContext('2d');
+
+    flippedCtx.save();
+    flippedCtx.translate(0, height);
+    flippedCtx.scale(1, -1);
+    flippedCtx.drawImage(baseCanvas, 0, 0);
+    flippedCtx.restore();
+
+    baseCanvas = flippedCanvas;
+
+    // テキストオブジェクトの座標を変換
+    textObjects.forEach(textObj => {
+        textObj.y = height - textObj.y;
+        // テキストの高さを考慮
+        textObj.y += textObj.fontSize;
+    });
+
+    redrawCanvas();
+    saveHistory();
+    showNotification('垂直反転しました', 'success');
+}
+
+// ========================================
+// スポイトツール
+// ========================================
+
+// クリックした位置の色を取得
+function pickColor(x, y) {
+    if (!imageLoaded) {
+        showNotification('先に画像をアップロードしてください', 'info');
+        return;
+    }
+
+    // ズームとパンを考慮せずにbaseCanvasから直接色を取得
+    const baseCtx = baseCanvas.getContext('2d');
+    const imageData = baseCtx.getImageData(x, y, 1, 1);
+    const pixel = imageData.data;
+
+    // RGB値を16進数に変換
+    const r = pixel[0].toString(16).padStart(2, '0');
+    const g = pixel[1].toString(16).padStart(2, '0');
+    const b = pixel[2].toString(16).padStart(2, '0');
+    const color = `#${r}${g}${b}`;
+
+    // 色を設定
+    currentColor = color;
+    colorPicker.value = color;
+    addColorToPalette(color);
+    updateBrushPreview();
+
+    showNotification(`色を抽出: ${color}`, 'success');
+}
+
+// ========================================
+// 図形描画機能
+// ========================================
+
+// 矩形を描画
+function drawRectangle(x1, y1, x2, y2, isFinal = false) {
+    const width = x2 - x1;
+    const height = y2 - y1;
+
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
+
+    if (shapeFill) {
+        ctx.fillStyle = currentColor;
+        ctx.fillRect(x1, y1, width, height);
+    } else {
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = brushSize;
+        ctx.strokeRect(x1, y1, width, height);
+    }
+
+    ctx.restore();
+
+    // 確定時はbaseCanvasにも描画
+    if (isFinal && baseCanvas) {
+        const baseCtx = baseCanvas.getContext('2d');
+        if (shapeFill) {
+            baseCtx.fillStyle = currentColor;
+            baseCtx.fillRect(x1, y1, width, height);
+        } else {
+            baseCtx.strokeStyle = currentColor;
+            baseCtx.lineWidth = brushSize;
+            baseCtx.strokeRect(x1, y1, width, height);
+        }
+    }
+}
+
+// 円を描画
+function drawCircle(x1, y1, x2, y2, isFinal = false) {
+    const radiusX = Math.abs(x2 - x1) / 2;
+    const radiusY = Math.abs(y2 - y1) / 2;
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
+
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+
+    if (shapeFill) {
+        ctx.fillStyle = currentColor;
+        ctx.fill();
+    } else {
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = brushSize;
+        ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // 確定時はbaseCanvasにも描画
+    if (isFinal && baseCanvas) {
+        const baseCtx = baseCanvas.getContext('2d');
+        baseCtx.beginPath();
+        baseCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+
+        if (shapeFill) {
+            baseCtx.fillStyle = currentColor;
+            baseCtx.fill();
+        } else {
+            baseCtx.strokeStyle = currentColor;
+            baseCtx.lineWidth = brushSize;
+            baseCtx.stroke();
+        }
+    }
+}
+
+// 直線を描画
+function drawLine(x1, y1, x2, y2, isFinal = false) {
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    ctx.restore();
+
+    // 確定時はbaseCanvasにも描画
+    if (isFinal && baseCanvas) {
+        const baseCtx = baseCanvas.getContext('2d');
+        baseCtx.beginPath();
+        baseCtx.moveTo(x1, y1);
+        baseCtx.lineTo(x2, y2);
+        baseCtx.strokeStyle = currentColor;
+        baseCtx.lineWidth = brushSize;
+        baseCtx.lineCap = 'round';
+        baseCtx.stroke();
+    }
+}
+
+// 矢印を描画
+function drawArrow(x1, y1, x2, y2, isFinal = false) {
+    const headLength = 20; // 矢印の頭の長さ
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
+
+    // 線を描画
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // 矢印の頭を描画
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    ctx.restore();
+
+    // 確定時はbaseCanvasにも描画
+    if (isFinal && baseCanvas) {
+        const baseCtx = baseCanvas.getContext('2d');
+
+        // 線を描画
+        baseCtx.beginPath();
+        baseCtx.moveTo(x1, y1);
+        baseCtx.lineTo(x2, y2);
+        baseCtx.strokeStyle = currentColor;
+        baseCtx.lineWidth = brushSize;
+        baseCtx.lineCap = 'round';
+        baseCtx.stroke();
+
+        // 矢印の頭を描画
+        baseCtx.beginPath();
+        baseCtx.moveTo(x2, y2);
+        baseCtx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
+        baseCtx.moveTo(x2, y2);
+        baseCtx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
+        baseCtx.strokeStyle = currentColor;
+        baseCtx.lineWidth = brushSize;
+        baseCtx.lineCap = 'round';
+        baseCtx.stroke();
     }
 }
 
@@ -800,6 +1182,13 @@ function editText(e) {
 }
 
 function startDrawing(e) {
+    // Altキーが押されている場合はスポイトツールとして動作
+    if (e.altKey && imageLoaded) {
+        const pos = getMousePos(e);
+        pickColor(Math.floor(pos.x), Math.floor(pos.y));
+        return;
+    }
+
     // スペースキーが押されている場合はパンモード
     if (e.shiftKey || e.button === 1) { // Shiftキーまたは中ボタン
         isPanning = true;
@@ -810,6 +1199,33 @@ function startDrawing(e) {
     }
 
     const pos = getMousePos(e);
+
+    // スポイトツール
+    if (currentTool === 'eyedropper') {
+        pickColor(Math.floor(pos.x), Math.floor(pos.y));
+        return;
+    }
+
+    // 図形描画ツール
+    if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'arrow') {
+        if (!imageLoaded) {
+            showNotification('先に画像をアップロードまたはペーストしてください', 'info');
+            return;
+        }
+
+        isDrawingShape = true;
+        shapeStartX = pos.x;
+        shapeStartY = pos.y;
+
+        // プレビュー用に現在のキャンバス状態を保存
+        previewCanvas = document.createElement('canvas');
+        previewCanvas.width = canvas.width;
+        previewCanvas.height = canvas.height;
+        const previewCtx = previewCanvas.getContext('2d');
+        previewCtx.drawImage(canvas, 0, 0);
+
+        return;
+    }
 
     if (currentTool === 'text') {
         // テキストツールの場合
@@ -868,6 +1284,25 @@ function draw(e) {
 
     const pos = getMousePos(e);
 
+    // 図形描画中（プレビュー表示）
+    if (isDrawingShape) {
+        // プレビュー用キャンバスを復元
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(previewCanvas, 0, 0);
+
+        // 図形を描画（プレビュー）
+        if (currentTool === 'rectangle') {
+            drawRectangle(shapeStartX, shapeStartY, pos.x, pos.y, false);
+        } else if (currentTool === 'circle') {
+            drawCircle(shapeStartX, shapeStartY, pos.x, pos.y, false);
+        } else if (currentTool === 'line') {
+            drawLine(shapeStartX, shapeStartY, pos.x, pos.y, false);
+        } else if (currentTool === 'arrow') {
+            drawArrow(shapeStartX, shapeStartY, pos.x, pos.y, false);
+        }
+        return;
+    }
+
     // テキストをドラッグ中
     if (isDraggingText && selectedTextIndex !== -1) {
         const dx = pos.x - dragStartX;
@@ -919,12 +1354,38 @@ function draw(e) {
     lastY = pos2.y;
 }
 
-function stopDrawing() {
+function stopDrawing(e) {
     const wasDrawing = isDrawing;
     const wasDragging = isDraggingText;
+    const wasDrawingShape = isDrawingShape;
+
+    // 図形描画の確定
+    if (isDrawingShape && e) {
+        const pos = getMousePos(e);
+
+        // 図形を確定（baseCanvasに描画）
+        if (currentTool === 'rectangle') {
+            drawRectangle(shapeStartX, shapeStartY, pos.x, pos.y, true);
+        } else if (currentTool === 'circle') {
+            drawCircle(shapeStartX, shapeStartY, pos.x, pos.y, true);
+        } else if (currentTool === 'line') {
+            drawLine(shapeStartX, shapeStartY, pos.x, pos.y, true);
+        } else if (currentTool === 'arrow') {
+            drawArrow(shapeStartX, shapeStartY, pos.x, pos.y, true);
+        }
+
+        // キャンバスを再描画
+        redrawCanvas();
+
+        isDrawingShape = false;
+        previewCanvas = null;
+        saveHistory();
+        return;
+    }
 
     isDrawing = false;
     isDraggingText = false;
+    isDrawingShape = false;
 
     // パン終了
     if (isPanning) {
@@ -933,7 +1394,7 @@ function stopDrawing() {
     }
 
     // 描画またはドラッグが完了したら履歴に保存
-    if (wasDrawing || wasDragging) {
+    if (wasDrawing || wasDragging || wasDrawingShape) {
         saveHistory();
     }
 }
@@ -1107,6 +1568,17 @@ clearBtn.addEventListener('click', () => {
     }
 });
 
+// 変形ボタンのイベントリスナー
+rotateLeftBtn.addEventListener('click', rotateLeft);
+rotateRightBtn.addEventListener('click', rotateRight);
+flipHorizontalBtn.addEventListener('click', flipHorizontal);
+flipVerticalBtn.addEventListener('click', flipVertical);
+
+// 図形オプションのイベントリスナー
+shapeFillCheckbox.addEventListener('change', (e) => {
+    shapeFill = e.target.checked;
+});
+
 // ショートカットキー
 document.addEventListener('keydown', (e) => {
     // テキスト入力中は一部のショートカットを無効化
@@ -1187,6 +1659,36 @@ document.addEventListener('keydown', (e) => {
             document.querySelector('[data-tool="text"]').click();
             showNotification('テキストツールを選択', 'info');
         }
+        // 4キーでスポイトツール
+        if (e.key === '4') {
+            e.preventDefault();
+            document.querySelector('[data-tool="eyedropper"]').click();
+            showNotification('スポイトツールを選択', 'info');
+        }
+        // 5キーで矩形ツール
+        if (e.key === '5') {
+            e.preventDefault();
+            document.querySelector('[data-tool="rectangle"]').click();
+            showNotification('矩形ツールを選択', 'info');
+        }
+        // 6キーで円ツール
+        if (e.key === '6') {
+            e.preventDefault();
+            document.querySelector('[data-tool="circle"]').click();
+            showNotification('円ツールを選択', 'info');
+        }
+        // 7キーで直線ツール
+        if (e.key === '7') {
+            e.preventDefault();
+            document.querySelector('[data-tool="line"]').click();
+            showNotification('直線ツールを選択', 'info');
+        }
+        // 8キーで矢印ツール
+        if (e.key === '8') {
+            e.preventDefault();
+            document.querySelector('[data-tool="arrow"]').click();
+            showNotification('矢印ツールを選択', 'info');
+        }
     }
 });
 
@@ -1199,11 +1701,15 @@ console.log('  - Ctrl+S: 画像を保存（ファイル名編集可能）');
 console.log('  - Ctrl+N: 新規キャンバス（クリア）');
 console.log('  - Ctrl+Z: 元に戻す');
 console.log('  - Ctrl+Y / Ctrl+Shift+Z: やり直し');
-console.log('  - 1/2/3: ツール切り替え（ブラシ/消しゴム/テキスト）');
+console.log('  - 1-8: ツール切り替え（ブラシ/消しゴム/テキスト/スポイト/矩形/円/直線/矢印）');
+console.log('  - Alt+クリック: 色を抽出（スポイト）');
 console.log('  - Ctrl+マウスホイール: ズームイン/アウト');
 console.log('  - Shift+ドラッグ: キャンバスをパン（移動）');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
 console.log('💡 テキストは太字・斜体の設定が可能です！');
 console.log('🎨 カラーパレット: 最近使った色を自動保存（LocalStorage）');
 console.log('🔍 ズーム: 25%〜400%まで対応、細かい編集が可能');
+console.log('🔄 変形: 左90°/右90°回転、水平/垂直反転に対応');
+console.log('📐 図形描画: 矩形、円、直線、矢印を描画可能（塗りつぶし/枠線切り替え可）');
+console.log('💧 スポイトツール: 画像から色を抽出');
 showNotification('画像エディターへようこそ！', 'info');
