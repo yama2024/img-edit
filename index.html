@@ -265,18 +265,27 @@
         <div class="instructions">
             <button id="toggleInstructionsBtn" class="btn">📖 使い方を表示</button>
             <div id="instructionsContent" class="instructions-content" style="display: none;">
-                <p><strong>使い方：</strong></p>
-                <ul>
-                    <li><strong>画像を読み込む：</strong>
+                <div class="instruction-blocks">
+                    <div class="instruction-block">
+                        <h3>📁 画像を読み込む</h3>
                         <ul>
                             <li>「📁 画像をアップロード」ボタンをクリック</li>
                             <li>画像をキャンバスにドラッグ&ドロップ</li>
                             <li>Ctrl+V (Mac: Cmd+V) でクリップボードから貼り付け</li>
                             <li>「📋 ペースト」ボタンをクリック（クリップボードから）</li>
                         </ul>
-                    </li>
-                    <li><strong>描画ツール：</strong> ブラシ・消しゴムを選択して、キャンバス上で自由に描画</li>
-                    <li><strong>図形描画：</strong>
+                    </div>
+
+                    <div class="instruction-block">
+                        <h3>🖌️ 描画ツール</h3>
+                        <ul>
+                            <li>ブラシ・消しゴムを選択して、キャンバス上で自由に描画</li>
+                            <li>線の太さと色を自由に変更できます</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-block">
+                        <h3>📐 図形描画</h3>
                         <ul>
                             <li>図形ツール（矩形・正方形・円・直線・矢印）を選択</li>
                             <li>ドラッグで図形を描画（リアルタイムプレビュー表示）</li>
@@ -285,8 +294,10 @@
                             <li>ハンドルをドラッグでサイズ変更</li>
                             <li>Deleteキーで選択した図形を削除</li>
                         </ul>
-                    </li>
-                    <li><strong>テキスト編集：</strong>
+                    </div>
+
+                    <div class="instruction-block">
+                        <h3>✏️ テキスト編集</h3>
                         <ul>
                             <li>クリックで新規テキスト追加</li>
                             <li>テキストをクリックで選択（枠が表示されます）</li>
@@ -294,9 +305,27 @@
                             <li>ダブルクリックでテキスト内容を編集</li>
                             <li>Deleteキーで選択したテキストを削除</li>
                         </ul>
-                    </li>
-                    <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
-                </ul>
+                    </div>
+
+                    <div class="instruction-block">
+                        <h3>✂️ トリミング</h3>
+                        <ul>
+                            <li>トリミングボタンをクリック</li>
+                            <li>ドラッグで範囲を作成</li>
+                            <li>範囲内をドラッグで移動</li>
+                            <li>ハンドルをドラッグでサイズ変更</li>
+                            <li>適用ボタンでトリミング実行</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-block">
+                        <h3>💾 保存</h3>
+                        <ul>
+                            <li>「💾 画像を保存」ボタンで編集した画像をダウンロード</li>
+                            <li>PNG形式で保存されます</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
