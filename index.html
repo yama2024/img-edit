@@ -83,6 +83,7 @@
                 <h3>色</h3>
                 <input type="color" id="colorPicker" value="#000000">
                 <label for="colorPicker">描画色</label>
+                <div id="colorPalette" class="color-palette"></div>
             </div>
 
             <div class="tool-group">
@@ -95,6 +96,17 @@
                 <h3>フォントサイズ</h3>
                 <input type="range" id="fontSize" min="10" max="100" value="24">
                 <span id="fontSizeValue">24</span>px
+            </div>
+
+            <div class="tool-group">
+                <h3>ズーム</h3>
+                <div class="zoom-controls">
+                    <button id="zoomOutBtn" class="btn btn-zoom">－</button>
+                    <input type="range" id="zoomSlider" min="25" max="400" value="100" step="25">
+                    <button id="zoomInBtn" class="btn btn-zoom">＋</button>
+                </div>
+                <div class="zoom-value"><span id="zoomValue">100</span>%</div>
+                <button id="zoomResetBtn" class="btn btn-zoom-reset">リセット</button>
             </div>
         </div>
 
@@ -141,7 +153,26 @@
                             <li>Deleteキーで選択したテキストを削除</li>
                         </ul>
                     </li>
-                    <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード、または Ctrl+S (Mac: Cmd+S)</li>
+                    <li><strong>カラーパレット：</strong>
+                        <ul>
+                            <li>最近使った色が自動的にパレットに追加されます（最大8色）</li>
+                            <li>パレットの色をクリックで素早く選択可能</li>
+                            <li>次回起動時もパレットが保持されます</li>
+                        </ul>
+                    </li>
+                    <li><strong>ズーム機能：</strong>
+                        <ul>
+                            <li>Ctrl+マウスホイール (Mac: Cmd+マウスホイール) でズームイン/アウト</li>
+                            <li>＋/－ボタンまたはスライダーでズーム調整（25%〜400%）</li>
+                            <li>Shift+ドラッグまたはマウス中ボタンドラッグでパン（移動）</li>
+                            <li>リセットボタンでズーム・パンを初期状態に戻す</li>
+                        </ul>
+                    </li>
+                    <li><strong>保存：</strong> 「💾 画像を保存」ボタンで編集した画像をダウンロード、または Ctrl+S (Mac: Cmd+S)
+                        <ul>
+                            <li>保存時にファイル名を編集できます</li>
+                        </ul>
+                    </li>
                     <li><strong>クリア：</strong> Ctrl+N (Mac: Cmd+N) で新規キャンバス（確認ダイアログ表示）</li>
                     <li><strong>元に戻す/やり直し：</strong>
                         <ul>

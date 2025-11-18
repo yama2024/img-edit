@@ -404,6 +404,80 @@ input[type="range"] {
     margin: 5px 0;
 }
 
+/* カラーパレット */
+.color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid #ddd;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    border-color: #667eea;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.color-swatch.active {
+    border-color: #667eea;
+    border-width: 3px;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* ズームコントロール */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-zoom {
+    padding: 5px 12px;
+    font-size: 18px;
+    font-weight: bold;
+    background: #667eea;
+    min-width: 40px;
+}
+
+.btn-zoom:hover {
+    background: #5568d3;
+}
+
+.zoom-value {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.btn-zoom-reset {
+    padding: 5px 15px;
+    font-size: 12px;
+    background: #95a5a6;
+    margin-top: 5px;
+    width: 100%;
+}
+
+.btn-zoom-reset:hover {
+    background: #7f8c8d;
+}
+
+#zoomSlider {
+    flex: 1;
+    min-width: 100px;
+}
+
 @media (max-width: 768px) {
     .toolbar {
         flex-direction: column;

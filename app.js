@@ -24,6 +24,20 @@ let history = [];
 let historyIndex = -1;
 const MAX_HISTORY = 50; // 履歴の最大保持数
 
+// カラーパレット管理
+let colorPalette = [];
+const MAX_PALETTE_COLORS = 8; // パレットの最大色数
+
+// ズーム・パン管理
+let zoomLevel = 1.0; // 現在のズームレベル（1.0 = 100%）
+let panX = 0; // パンのX座標
+let panY = 0; // パンのY座標
+let isPanning = false; // パン中かどうか
+let lastPanX = 0; // パン開始時のX座標
+let lastPanY = 0; // パン開始時のY座標
+const MIN_ZOOM = 0.25; // 最小ズーム（25%）
+const MAX_ZOOM = 4.0; // 最大ズーム（400%）
+
 // キャンバスのデフォルトサイズ
 canvas.width = 800;
 canvas.height = 600;
@@ -37,6 +51,7 @@ const clearBtn = document.getElementById('clearBtn');
 const undoBtn = document.getElementById('undoBtn');
 const redoBtn = document.getElementById('redoBtn');
 const colorPicker = document.getElementById('colorPicker');
+const colorPaletteElement = document.getElementById('colorPalette');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
 const fontSizeSlider = document.getElementById('fontSize');
@@ -54,6 +69,11 @@ const textOkBtn = document.getElementById('textOkBtn');
 const textCancelBtn = document.getElementById('textCancelBtn');
 const toggleInstructionsBtn = document.getElementById('toggleInstructions');
 const instructionsContent = document.getElementById('instructionsContent');
+const zoomSlider = document.getElementById('zoomSlider');
+const zoomValue = document.getElementById('zoomValue');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomResetBtn = document.getElementById('zoomResetBtn');
 
 // 初期化
 function init() {
@@ -62,6 +82,80 @@ function init() {
 }
 
 init();
+
+// カラーパレット関連の関数
+
+// LocalStorageからカラーパレットを読み込み
+function loadColorPalette() {
+    const saved = localStorage.getItem('colorPalette');
+    if (saved) {
+        try {
+            colorPalette = JSON.parse(saved);
+        } catch (e) {
+            colorPalette = [];
+        }
+    }
+    // デフォルトカラーを追加（初回のみ）
+    if (colorPalette.length === 0) {
+        colorPalette = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    }
+    renderColorPalette();
+}
+
+// LocalStorageにカラーパレットを保存
+function saveColorPalette() {
+    localStorage.setItem('colorPalette', JSON.stringify(colorPalette));
+}
+
+// パレットに色を追加
+function addColorToPalette(color) {
+    // すでに存在する色は削除して先頭に追加
+    const index = colorPalette.indexOf(color);
+    if (index !== -1) {
+        colorPalette.splice(index, 1);
+    }
+
+    // 先頭に追加
+    colorPalette.unshift(color);
+
+    // 最大数を超えたら削除
+    if (colorPalette.length > MAX_PALETTE_COLORS) {
+        colorPalette = colorPalette.slice(0, MAX_PALETTE_COLORS);
+    }
+
+    saveColorPalette();
+    renderColorPalette();
+}
+
+// カラーパレットを描画
+function renderColorPalette() {
+    colorPaletteElement.innerHTML = '';
+
+    colorPalette.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.title = color;
+
+        // 現在の色と同じならactiveクラスを追加
+        if (color === currentColor) {
+            swatch.classList.add('active');
+        }
+
+        // クリックで色を選択
+        swatch.addEventListener('click', () => {
+            currentColor = color;
+            colorPicker.value = color;
+            renderColorPalette(); // activeクラスを更新
+            showNotification(`色を選択: ${color}`, 'info');
+        });
+
+        colorPaletteElement.appendChild(swatch);
+    });
+}
+
+// カラーパレットを初期化
+loadColorPalette();
 
 // Undo/Redoボタンの状態を更新
 function updateUndoRedoButtons() {
@@ -253,6 +347,7 @@ toolButtons.forEach(btn => {
 // 色選択
 colorPicker.addEventListener('change', (e) => {
     currentColor = e.target.value;
+    addColorToPalette(currentColor); // パレットに追加
 });
 
 // ブラシサイズ
@@ -274,6 +369,49 @@ fontFamilySelect.addEventListener('change', (e) => {
     currentFontFamily = e.target.value;
 });
 
+// ズーム機能
+
+// ズームレベルを設定
+function setZoom(newZoom) {
+    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    zoomSlider.value = Math.round(zoomLevel * 100);
+    zoomValue.textContent = Math.round(zoomLevel * 100);
+    redrawCanvas();
+}
+
+// ズームスライダー
+zoomSlider.addEventListener('input', (e) => {
+    setZoom(e.target.value / 100);
+});
+
+// ズームインボタン
+zoomInBtn.addEventListener('click', () => {
+    setZoom(zoomLevel + 0.25);
+});
+
+// ズームアウトボタン
+zoomOutBtn.addEventListener('click', () => {
+    setZoom(zoomLevel - 0.25);
+});
+
+// ズームリセットボタン
+zoomResetBtn.addEventListener('click', () => {
+    zoomLevel = 1.0;
+    panX = 0;
+    panY = 0;
+    setZoom(1.0);
+    showNotification('ズームをリセットしました', 'info');
+});
+
+// マウスホイールでズーム（Ctrlキー押下時）
+canvas.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoom(zoomLevel + delta);
+    }
+}, { passive: false });
+
 // 画像アップロード
 uploadBtn.addEventListener('click', () => {
     fileInput.click();
@@ -290,6 +428,13 @@ fileInput.addEventListener('change', (e) => {
 function redrawCanvas() {
     // キャンバスをクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // ズームとパンの変換を保存
+    ctx.save();
+
+    // ズームとパンを適用
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
 
     // ベース画像とブラシ描画を描画
     if (baseCanvas) {
@@ -315,12 +460,15 @@ function redrawCanvas() {
             const textHeight = textObj.fontSize;
 
             ctx.strokeStyle = '#667eea';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 2 / zoomLevel; // ズームレベルに応じて線の太さを調整
+            ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]); // ズームレベルに応じて破線を調整
             ctx.strokeRect(textObj.x - 5, textObj.y - textHeight, textWidth + 10, textHeight + 10);
             ctx.setLineDash([]);
         }
     });
+
+    // 変換を復元
+    ctx.restore();
 }
 
 // 画像ファイルを読み込む
@@ -501,9 +649,14 @@ function getMousePos(e) {
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
+    // キャンバス座標を計算
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+
+    // ズームとパンを考慮した実際の座標を計算
     return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY
+        x: (canvasX - panX) / zoomLevel,
+        y: (canvasY - panY) / zoomLevel
     };
 }
 
@@ -511,7 +664,10 @@ function getMousePos(e) {
 function getClickedTextIndex(x, y) {
     for (let i = textObjects.length - 1; i >= 0; i--) {
         const textObj = textObjects[i];
-        ctx.font = `${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
+        // フォントスタイルを正確に設定（太字・斜体を含む）
+        const fontStyle = textObj.italic ? 'italic' : 'normal';
+        const fontWeight = textObj.bold ? 'bold' : 'normal';
+        ctx.font = `${fontStyle} ${fontWeight} ${textObj.fontSize}px ${textObj.fontFamily || 'Arial'}`;
         const metrics = ctx.measureText(textObj.text);
         const textWidth = metrics.width;
         const textHeight = textObj.fontSize;
@@ -561,6 +717,15 @@ function editText(e) {
 }
 
 function startDrawing(e) {
+    // スペースキーが押されている場合はパンモード
+    if (e.shiftKey || e.button === 1) { // Shiftキーまたは中ボタン
+        isPanning = true;
+        lastPanX = e.clientX;
+        lastPanY = e.clientY;
+        canvas.style.cursor = 'grab';
+        return;
+    }
+
     const pos = getMousePos(e);
 
     if (currentTool === 'text') {
@@ -605,6 +770,19 @@ function startDrawing(e) {
 }
 
 function draw(e) {
+    // パン中の処理
+    if (isPanning) {
+        const dx = e.clientX - lastPanX;
+        const dy = e.clientY - lastPanY;
+        panX += dx;
+        panY += dy;
+        lastPanX = e.clientX;
+        lastPanY = e.clientY;
+        redrawCanvas();
+        canvas.style.cursor = 'grabbing';
+        return;
+    }
+
     const pos = getMousePos(e);
 
     // テキストをドラッグ中
@@ -627,7 +805,10 @@ function draw(e) {
 
     const pos2 = getMousePos(e);
 
-    // メインキャンバスに描画
+    // メインキャンバスに描画（ズーム適用）
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(pos2.x, pos2.y);
@@ -636,6 +817,7 @@ function draw(e) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
+    ctx.restore();
 
     // baseCanvasにも同時に描画（ブラシ描画を永続化）
     if (baseCanvas) {
@@ -660,6 +842,12 @@ function stopDrawing() {
 
     isDrawing = false;
     isDraggingText = false;
+
+    // パン終了
+    if (isPanning) {
+        isPanning = false;
+        updateCursor(); // カーソルを元に戻す
+    }
 
     // 描画またはドラッグが完了したら履歴に保存
     if (wasDrawing || wasDragging) {
@@ -795,12 +983,26 @@ function handleTouchMove(e) {
 // 画像を保存
 saveBtn.addEventListener('click', () => {
     try {
-        const link = document.createElement('a');
+        // デフォルトのファイル名を生成
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        link.download = `edited-image-${timestamp}.png`;
+        const defaultFilename = `edited-image-${timestamp}`;
+
+        // ユーザーにファイル名を入力してもらう
+        const filename = prompt('保存するファイル名を入力してください（拡張子なし）:', defaultFilename);
+
+        // キャンセルされた場合は処理を中止
+        if (filename === null) {
+            return;
+        }
+
+        // 空文字の場合はデフォルト名を使用
+        const finalFilename = filename.trim() || defaultFilename;
+
+        const link = document.createElement('a');
+        link.download = `${finalFilename}.png`;
         link.href = canvas.toDataURL();
         link.click();
-        showNotification('画像を保存しました！', 'success');
+        showNotification(`画像を保存しました: ${finalFilename}.png`, 'success');
     } catch (err) {
         console.error('保存エラー:', err);
         showNotification('画像の保存に失敗しました', 'error');
@@ -897,11 +1099,15 @@ console.log('📋 Ctrl+V で画像を貼り付けることができます');
 console.log('🖱️ 画像をドラッグ&ドロップすることもできます');
 console.log('⌨️ キーボードショートカット:');
 console.log('  - Ctrl+O: 画像を開く');
-console.log('  - Ctrl+S: 画像を保存');
+console.log('  - Ctrl+S: 画像を保存（ファイル名編集可能）');
 console.log('  - Ctrl+N: 新規キャンバス（クリア）');
 console.log('  - Ctrl+Z: 元に戻す');
 console.log('  - Ctrl+Y / Ctrl+Shift+Z: やり直し');
 console.log('  - 1/2/3: ツール切り替え（ブラシ/消しゴム/テキスト）');
+console.log('  - Ctrl+マウスホイール: ズームイン/アウト');
+console.log('  - Shift+ドラッグ: キャンバスをパン（移動）');
 console.log('✏️ テキストツール: クリックで追加、ダブルクリックで編集、Deleteキーで削除');
 console.log('💡 テキストは太字・斜体の設定が可能です！');
+console.log('🎨 カラーパレット: 最近使った色を自動保存（LocalStorage）');
+console.log('🔍 ズーム: 25%〜400%まで対応、細かい編集が可能');
 showNotification('画像エディターへようこそ！', 'info');
