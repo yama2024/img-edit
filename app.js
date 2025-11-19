@@ -64,6 +64,7 @@ const pasteBtn = document.getElementById('pasteBtn');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
@@ -439,6 +440,7 @@ function redo() {
 
 function updateUndoRedoButtons() {
     undoBtn.disabled = historyIndex <= 0;
+    redoBtn.disabled = historyIndex >= historyStates.length - 1;
 }
 
 // 図形を描画する関数
@@ -1626,6 +1628,9 @@ clearBtn.addEventListener('click', () => {
 // Undoボタン
 undoBtn.addEventListener('click', undo);
 
+// Redoボタン
+redoBtn.addEventListener('click', redo);
+
 // トリミングボタン
 cropBtn.addEventListener('click', () => {
     if (!imageLoaded) {
@@ -1914,7 +1919,7 @@ document.addEventListener('keydown', (e) => {
         undo();
     }
 
-    // Ctrl+Y または Ctrl+Shift+Z でやり直す
+    // Ctrl+Y または Ctrl+Shift+Z でやり直し
     if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
         e.preventDefault();
         redo();
@@ -1968,3 +1973,4 @@ console.log('✏️ テキストツール: クリックで追加、ダブルク�
 console.log('📐 図形ツール: ドラッグで描画、クリックで選択、ハンドルでサイズ変更、Deleteキーで削除');
 console.log('■ 正方形ツール: 縦横比1:1の四角形を描画');
 console.log('↶ 元に戻す: Ctrl+Z');
+console.log('↷ やり直し: Ctrl+Y または Ctrl+Shift+Z');
