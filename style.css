@@ -585,21 +585,167 @@ input[type="range"] {
     margin-right: 10px;
 }
 
+/* リサイズダイアログ */
+.resize-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(3px);
+}
+
+.resize-dialog.show {
+    display: flex !important;
+}
+
+.resize-dialog-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    min-width: 400px;
+    max-width: 90%;
+    animation: slideIn 0.3s ease-out;
+}
+
+.resize-dialog-content h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.5em;
+    font-weight: 600;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.resize-input-group {
+    margin-bottom: 15px;
+}
+
+.resize-input-group label {
+    display: block;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.resize-input-group input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.resize-input-group input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.resize-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+/* タブレット向け (769px - 1024px) */
+@media (max-width: 1024px) {
+    body {
+        padding: 15px;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
+    .toolbar {
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .canvas-container {
+        padding: 20px;
+    }
+
+    .instruction-blocks {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+    }
+}
+
+/* 小型タブレット・大型スマホ向け (481px - 768px) */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
     .toolbar {
         flex-direction: column;
+        gap: 12px;
+        padding: 12px;
     }
 
     .tool-group {
         width: 100%;
+        padding: 12px;
+    }
+
+    header {
+        padding: 15px;
     }
 
     header h1 {
         font-size: 1.5em;
     }
 
+    /* ボタンをタッチしやすく */
+    .btn {
+        padding: 12px 24px;
+        font-size: 15px;
+        min-height: 44px; /* タッチターゲット最小サイズ */
+    }
+
+    .tool-btn {
+        min-height: 44px;
+    }
+
+    /* 通知を上中央に */
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        transform: translateY(-100px);
+        text-align: center;
+    }
+
+    .notification.show {
+        transform: translateY(0);
+    }
+
+    .canvas-container {
+        padding: 15px;
+        min-height: 400px;
+    }
+
+    #canvas {
+        max-width: 100%;
+        height: auto;
+    }
+
     .text-input-content {
-        min-width: 90%;
+        min-width: 95%;
+        max-width: 95%;
         padding: 20px;
     }
 
@@ -620,9 +766,249 @@ input[type="range"] {
 
     .text-input-buttons {
         flex-direction: column-reverse;
+        gap: 10px;
     }
 
     .text-input-buttons .btn {
         width: 100%;
+    }
+
+    .resize-dialog-content {
+        min-width: 95%;
+        max-width: 95%;
+        padding: 20px;
+    }
+
+    .resize-buttons {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .resize-buttons .btn {
+        width: 100%;
+    }
+
+    /* トリミングコントロール */
+    .crop-controls {
+        bottom: 15px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .crop-controls::before {
+        margin-right: 0;
+        margin-bottom: 5px;
+    }
+
+    .crop-controls .btn {
+        width: 100%;
+    }
+
+    .instruction-blocks {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .instruction-block {
+        padding: 12px;
+    }
+
+    .instruction-block h3 {
+        font-size: 1.2em;
+    }
+
+    /* カラーピッカーをタッチしやすく */
+    #colorPicker,
+    #fillColorPicker,
+    #strokeColorPicker {
+        width: 70px;
+        height: 44px;
+    }
+
+    .color-input {
+        width: 100px;
+        height: 44px;
+    }
+}
+
+/* スマートフォン向け (480px以下) */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    header {
+        padding: 12px;
+    }
+
+    header h1 {
+        font-size: 1.3em;
+    }
+
+    .toolbar {
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .tool-group {
+        padding: 10px;
+    }
+
+    .tool-group h3 {
+        font-size: 0.95em;
+    }
+
+    /* ボタンサイズ拡大 */
+    .btn {
+        padding: 14px 20px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+
+    .tool-btn {
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    .canvas-container {
+        padding: 10px;
+        min-height: 300px;
+    }
+
+    .drop-hint {
+        font-size: 1em;
+        padding: 10px;
+    }
+
+    .text-input-content {
+        padding: 15px;
+    }
+
+    .text-input-content h3 {
+        font-size: 1.1em;
+        margin-bottom: 15px;
+    }
+
+    .dialog-section {
+        margin-bottom: 15px;
+    }
+
+    .dialog-section label {
+        font-size: 0.85em;
+    }
+
+    .dialog-section textarea {
+        font-size: 16px; /* iOS でズームを防ぐ */
+    }
+
+    .dialog-section input[type="number"] {
+        font-size: 16px; /* iOS でズームを防ぐ */
+    }
+
+    .text-preview {
+        min-height: 70px;
+        padding: 15px;
+        font-size: 16px;
+    }
+
+    .resize-dialog-content {
+        padding: 15px;
+    }
+
+    .resize-dialog-content h3 {
+        font-size: 1.1em;
+    }
+
+    .instruction-block {
+        padding: 10px;
+    }
+
+    .instruction-block h3 {
+        font-size: 1.1em;
+    }
+
+    .instruction-block ul {
+        font-size: 0.9em;
+        line-height: 1.6;
+    }
+
+    /* サイズ設定を縦並びに */
+    .size-setting {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+
+    .size-setting label {
+        min-width: auto;
+    }
+
+    .size-setting input[type="range"] {
+        width: 100%;
+    }
+
+    input[type="range"] {
+        width: 100%;
+    }
+
+    /* カラーピッカー */
+    #colorPicker,
+    #fillColorPicker,
+    #strokeColorPicker {
+        width: 80px;
+        height: 48px;
+    }
+
+    .color-input {
+        width: 100%;
+        height: 48px;
+    }
+
+    .color-setting {
+        flex-wrap: wrap;
+    }
+
+    /* トリミングコントロール */
+    .crop-controls {
+        bottom: 10px;
+        left: 5px;
+        right: 5px;
+        padding: 10px;
+    }
+
+    .crop-controls::before {
+        font-size: 0.9em;
+    }
+}
+
+/* 極小スマートフォン向け (360px以下) */
+@media (max-width: 360px) {
+    header h1 {
+        font-size: 1.1em;
+    }
+
+    .btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .tool-btn {
+        font-size: 14px;
+    }
+
+    .canvas-container {
+        padding: 5px;
+    }
+
+    .instruction-block h3 {
+        font-size: 1em;
+    }
+
+    .instruction-block ul {
+        font-size: 0.85em;
     }
 }

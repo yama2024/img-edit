@@ -53,9 +53,29 @@ let cropDragOffsetY = 0;
 let isCreatingCropRect = false;
 let originalAspectRatio = 1;
 
-// キャンバスのデフォルトサイズ
-canvas.width = 800;
-canvas.height = 600;
+// キャンバスのデフォルトサイズ（レスポンシブ対応）
+function setInitialCanvasSize() {
+    const containerWidth = document.querySelector('.canvas-container').clientWidth;
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        // スマートフォン・タブレット: 画面幅に合わせる
+        const maxWidth = Math.min(containerWidth - 40, 600);
+        const maxHeight = Math.min(window.innerHeight - 300, 450);
+        canvas.width = maxWidth;
+        canvas.height = maxHeight;
+    } else {
+        // デスクトップ: デフォルトサイズ
+        canvas.width = 800;
+        canvas.height = 600;
+    }
+
+    // キャンバスを白で塗りつぶし
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+setInitialCanvasSize();
 
 // UI要素の取得
 const fileInput = document.getElementById('fileInput');
@@ -1964,6 +1984,100 @@ toggleInstructionsBtn.addEventListener('click', () => {
         instructionsContent.style.display = 'none';
         toggleInstructionsBtn.textContent = '📖 使い方を表示';
     }
+});
+
+// スマートフォン向けタッチ制御の改善
+(function initMobileOptimizations() {
+    // ダブルタップズームを防止
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+
+    // キャンバス以外のタッチスクロールを許可、キャンバス上では防止
+    canvas.addEventListener('touchstart', function(e) {
+        // デフォルトの動作を防止（スクロール、ズームなど）
+        e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', function(e) {
+        // キャンバス上でのスクロールを防止
+        e.preventDefault();
+    }, { passive: false });
+
+    // ピンチズームを防止（gestureイベント - Safari用）
+    document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+    });
+
+    document.addEventListener('gesturechange', function(e) {
+        e.preventDefault();
+    });
+
+    document.addEventListener('gestureend', function(e) {
+        e.preventDefault();
+    });
+
+    // ツールボタンのタップ時のハイライトを改善
+    const toolButtons = document.querySelectorAll('.btn, .tool-btn');
+    toolButtons.forEach(button => {
+        button.addEventListener('touchstart', function() {
+            this.style.opacity = '0.7';
+        });
+        button.addEventListener('touchend', function() {
+            this.style.opacity = '1';
+        });
+        button.addEventListener('touchcancel', function() {
+            this.style.opacity = '1';
+        });
+    });
+
+    console.log('📱 スマートフォン向け最適化が有効になりました');
+})();
+
+// ウィンドウリサイズ・画面回転時の対応
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+        // 画像がロードされていない場合のみキャンバスサイズを調整
+        if (!imageLoaded) {
+            const containerWidth = document.querySelector('.canvas-container').clientWidth;
+            const isMobile = window.innerWidth <= 768;
+
+            if (isMobile) {
+                const maxWidth = Math.min(containerWidth - 40, 600);
+                const maxHeight = Math.min(window.innerHeight - 300, 450);
+
+                // キャンバスサイズを変更しても既存のコンテンツが失われないように
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(canvas, 0, 0);
+
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(tempCanvas, 0, 0);
+            }
+        }
+        console.log('📱 画面サイズが変更されました');
+    }, 250);
+});
+
+// 画面の向き変更時の対応
+window.addEventListener('orientationchange', function() {
+    setTimeout(function() {
+        console.log('📱 画面の向きが変更されました');
+        window.dispatchEvent(new Event('resize'));
+    }, 100);
 });
 
 console.log('🎨 画像エディターが読み込まれました！');
