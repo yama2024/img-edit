@@ -4,20 +4,40 @@
     box-sizing: border-box;
 }
 
+/* スムーズスクロール */
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
     min-height: 100vh;
     padding: 20px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25), 0 10px 25px rgba(0, 0, 0, 0.15);
     overflow: hidden;
+    animation: containerFadeIn 0.5s ease-out;
+}
+
+@keyframes containerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 header {
@@ -74,66 +94,164 @@ header h1 {
     font-weight: 700;
 }
 
+/* ツールチップシステム */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    white-space: nowrap;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-tooltip]::after {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    border: 6px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:focus::before {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus::after {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+}
+
 .btn {
     padding: 10px 20px;
     border: none;
-    border-radius: 5px;
-    background: #667eea;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 500;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn:hover::before {
+    opacity: 1;
 }
 
 .btn:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4), 0 2px 6px rgba(102, 126, 234, 0.2);
 }
 
 .btn:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3), 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .btn:disabled {
-    background: #bdc3c7;
+    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
     cursor: not-allowed;
     opacity: 0.6;
     transform: none;
     box-shadow: none;
 }
 
+.btn:disabled::before {
+    display: none;
+}
+
 .btn:disabled:hover {
-    background: #bdc3c7;
     transform: none;
     box-shadow: none;
 }
 
 .btn-danger {
-    background: #e74c3c;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
 }
 
 .btn-danger:hover {
-    background: #c0392b;
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4), 0 2px 6px rgba(231, 76, 60, 0.2);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+}
+
+.btn-secondary:hover {
+    box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4), 0 2px 6px rgba(149, 165, 166, 0.2);
 }
 
 .tool-btn {
-    background: #95a5a6;
-}
-
-.tool-btn.active {
-    background: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+    color: #2c3e50;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
 }
 
 .tool-btn:hover {
-    background: #7f8c8d;
+    background: linear-gradient(135deg, #d5dbdb 0%, #95a5a6 100%);
+    color: #1a252f;
+}
+
+.tool-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(102, 126, 234, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
 }
 
 .tool-btn.active:hover {
-    background: #5568d3;
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.tool-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
 }
 
 #colorPicker,
@@ -141,9 +259,27 @@ header h1 {
 #strokeColorPicker {
     width: 60px;
     height: 40px;
-    border: none;
-    border-radius: 5px;
+    border: 3px solid #e0e0e0;
+    border-radius: 8px;
     cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+#colorPicker:hover,
+#fillColorPicker:hover,
+#strokeColorPicker:hover {
+    border-color: #667eea;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+#colorPicker:focus,
+#fillColorPicker:focus,
+#strokeColorPicker:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2), 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .color-setting {
@@ -200,6 +336,80 @@ header h1 {
 input[type="range"] {
     width: 150px;
     cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input[type="range"]:hover {
+    box-shadow: 0 0 8px rgba(102, 126, 234, 0.4);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border: 3px solid white;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.6);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border: 3px solid white;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.3);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.6);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+    transform: scale(1.1);
+}
+
+input[type="range"]:focus {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+    transition: transform 0.2s ease;
+}
+
+input[type="checkbox"]:hover {
+    transform: scale(1.1);
+}
+
+input[type="checkbox"]:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
 }
 
 .canvas-container {

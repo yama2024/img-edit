@@ -181,58 +181,58 @@
             <div class="tool-group">
                 <h3>ファイル</h3>
                 <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                <button id="uploadBtn" class="btn">📁 画像をアップロード</button>
-                <button id="pasteBtn" class="btn">📋 ペースト (Ctrl+V)</button>
-                <button id="saveBtn" class="btn">💾 画像を保存</button>
-                <button id="clearBtn" class="btn btn-danger">🗑️ クリア</button>
+                <button id="uploadBtn" class="btn" data-tooltip="ファイルから画像を読み込む" aria-label="画像をアップロード">📁 画像をアップロード</button>
+                <button id="pasteBtn" class="btn" data-tooltip="クリップボードから画像を貼り付け (Ctrl+V)" aria-label="画像をペースト">📋 ペースト (Ctrl+V)</button>
+                <button id="saveBtn" class="btn" data-tooltip="編集した画像をPNGで保存 (Ctrl+S)" aria-label="画像を保存">💾 画像を保存</button>
+                <button id="clearBtn" class="btn btn-danger" data-tooltip="キャンバスをリセット" aria-label="キャンバスをクリア">🗑️ クリア</button>
             </div>
 
             <div class="tool-group">
                 <h3>編集</h3>
-                <button id="undoBtn" class="btn" disabled>↶ 元に戻す</button>
-                <button id="redoBtn" class="btn" disabled>↷ やり直し</button>
-                <button id="cropBtn" class="btn">✂️ トリミング</button>
-                <button id="resizeBtn" class="btn">📏 リサイズ</button>
-                <button id="rotateCWBtn" class="btn">↻ 90° 回転</button>
+                <button id="undoBtn" class="btn" disabled data-tooltip="1つ前の状態に戻す (Ctrl+Z)" aria-label="元に戻す">↶ 元に戻す</button>
+                <button id="redoBtn" class="btn" disabled data-tooltip="取り消した操作をやり直す (Ctrl+Y)" aria-label="やり直し">↷ やり直し</button>
+                <button id="cropBtn" class="btn" data-tooltip="画像をトリミング" aria-label="トリミング">✂️ トリミング</button>
+                <button id="resizeBtn" class="btn" data-tooltip="画像サイズを変更" aria-label="リサイズ">📏 リサイズ</button>
+                <button id="rotateCWBtn" class="btn" data-tooltip="画像を時計回りに90度回転" aria-label="90度回転">↻ 90° 回転</button>
             </div>
 
             <div class="tool-group drawing-tools-sticky" id="drawingToolsGroup">
                 <h3>描画ツール</h3>
-                <button id="selectBtn" class="btn tool-btn active" data-tool="select">選択</button>
-                <button id="brushBtn" class="btn tool-btn" data-tool="brush">ブラシ</button>
-                <button id="eraserBtn" class="btn tool-btn" data-tool="eraser">消しゴム</button>
-                <button id="textBtn" class="btn tool-btn" data-tool="text">テキスト</button>
+                <button id="selectBtn" class="btn tool-btn active" data-tool="select" data-tooltip="図形やテキストを選択・移動・編集" aria-label="選択ツール">選択</button>
+                <button id="brushBtn" class="btn tool-btn" data-tool="brush" data-tooltip="自由な描画" aria-label="ブラシツール">ブラシ</button>
+                <button id="eraserBtn" class="btn tool-btn" data-tool="eraser" data-tooltip="描画内容を消去" aria-label="消しゴムツール">消しゴム</button>
+                <button id="textBtn" class="btn tool-btn" data-tool="text" data-tooltip="テキストを追加・編集" aria-label="テキストツール">テキスト</button>
             </div>
 
             <div class="tool-group">
                 <h3>図形ツール</h3>
-                <button id="rectangleBtn" class="btn tool-btn" data-tool="rectangle">矩形</button>
-                <button id="squareBtn" class="btn tool-btn" data-tool="square">正方形</button>
-                <button id="circleBtn" class="btn tool-btn" data-tool="circle">円</button>
-                <button id="lineBtn" class="btn tool-btn" data-tool="line">直線</button>
-                <button id="arrowBtn" class="btn tool-btn" data-tool="arrow">矢印</button>
+                <button id="rectangleBtn" class="btn tool-btn" data-tool="rectangle" data-tooltip="長方形を描画" aria-label="矩形ツール">矩形</button>
+                <button id="squareBtn" class="btn tool-btn" data-tool="square" data-tooltip="正方形を描画 (1:1)" aria-label="正方形ツール">正方形</button>
+                <button id="circleBtn" class="btn tool-btn" data-tool="circle" data-tooltip="円/楕円を描画" aria-label="円ツール">円</button>
+                <button id="lineBtn" class="btn tool-btn" data-tool="line" data-tooltip="直線を描画" aria-label="直線ツール">直線</button>
+                <button id="arrowBtn" class="btn tool-btn" data-tool="arrow" data-tooltip="矢印を描画" aria-label="矢印ツール">矢印</button>
             </div>
 
             <div class="tool-group">
                 <h3>塗り・枠線</h3>
-                <label>
-                    <input type="checkbox" id="fillShape" checked>
+                <label data-tooltip="図形の塗りつぶしを有効化">
+                    <input type="checkbox" id="fillShape" checked aria-label="塗りつぶしを有効化">
                     塗りつぶし
                 </label>
-                <label>
-                    <input type="checkbox" id="strokeShape" checked>
+                <label data-tooltip="図形の枠線を有効化">
+                    <input type="checkbox" id="strokeShape" checked aria-label="枠線を有効化">
                     枠線
                 </label>
                 <div class="color-setting">
-                    <input type="color" id="colorPicker" value="#000000">
+                    <input type="color" id="colorPicker" value="#000000" data-tooltip="ブラシの描画色を選択" aria-label="描画色">
                     <label for="colorPicker">描画</label>
                 </div>
                 <div class="color-setting">
-                    <input type="color" id="fillColorPicker" value="#ff0000">
+                    <input type="color" id="fillColorPicker" value="#ff0000" data-tooltip="図形の塗りつぶし色を選択" aria-label="塗りつぶし色">
                     <label for="fillColorPicker">塗り</label>
                 </div>
                 <div class="color-setting">
-                    <input type="color" id="strokeColorPicker" value="#000000">
+                    <input type="color" id="strokeColorPicker" value="#000000" data-tooltip="図形の枠線色を選択" aria-label="枠線色">
                     <label for="strokeColorPicker">枠線</label>
                 </div>
             </div>
@@ -241,17 +241,17 @@
                 <h3>サイズ</h3>
                 <div class="size-setting">
                     <label>線</label>
-                    <input type="range" id="brushSize" min="1" max="50" value="5">
+                    <input type="range" id="brushSize" min="1" max="50" value="5" data-tooltip="ブラシの太さ: 1-50px" aria-label="ブラシサイズ">
                     <span id="brushSizeValue">5</span>px
                 </div>
                 <div class="size-setting">
                     <label>消ゴム</label>
-                    <input type="range" id="eraserSize" min="1" max="100" value="20">
+                    <input type="range" id="eraserSize" min="1" max="100" value="20" data-tooltip="消しゴムのサイズ: 1-100px" aria-label="消しゴムサイズ">
                     <span id="eraserSizeValue">20</span>px
                 </div>
                 <div class="size-setting">
                     <label>文字</label>
-                    <input type="range" id="fontSize" min="10" max="100" value="24">
+                    <input type="range" id="fontSize" min="10" max="100" value="24" data-tooltip="フォントサイズ: 10-100px" aria-label="フォントサイズ">
                     <span id="fontSizeValue">24</span>px
                 </div>
             </div>
