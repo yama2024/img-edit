@@ -85,6 +85,10 @@ const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const undoBtn = document.getElementById('undoBtn');
 const redoBtn = document.getElementById('redoBtn');
+const bringToFrontBtn = document.getElementById('bringToFrontBtn');
+const bringForwardBtn = document.getElementById('bringForwardBtn');
+const sendBackwardBtn = document.getElementById('sendBackwardBtn');
+const sendToBackBtn = document.getElementById('sendToBackBtn');
 const colorPicker = document.getElementById('colorPicker');
 const brushSizeSlider = document.getElementById('brushSize');
 const brushSizeValue = document.getElementById('brushSizeValue');
@@ -461,6 +465,111 @@ function redo() {
 function updateUndoRedoButtons() {
     undoBtn.disabled = historyIndex <= 0;
     redoBtn.disabled = historyIndex >= historyStates.length - 1;
+}
+
+// レイヤー操作関数
+function bringToFront() {
+    // 選択中のテキストまたは図形を最前面に移動
+    if (selectedTextIndex !== -1) {
+        const text = textObjects.splice(selectedTextIndex, 1)[0];
+        textObjects.push(text);
+        selectedTextIndex = textObjects.length - 1;
+        redrawCanvas();
+        saveState();
+        showNotification('テキストを最前面に移動しました', 'success');
+    } else if (selectedShapeIndex !== -1) {
+        const shape = shapeObjects.splice(selectedShapeIndex, 1)[0];
+        shapeObjects.push(shape);
+        selectedShapeIndex = shapeObjects.length - 1;
+        redrawCanvas();
+        saveState();
+        showNotification('図形を最前面に移動しました', 'success');
+    } else {
+        showNotification('テキストまたは図形を選択してください', 'info');
+    }
+}
+
+function sendToBack() {
+    // 選択中のテキストまたは図形を最背面に移動
+    if (selectedTextIndex !== -1) {
+        const text = textObjects.splice(selectedTextIndex, 1)[0];
+        textObjects.unshift(text);
+        selectedTextIndex = 0;
+        redrawCanvas();
+        saveState();
+        showNotification('テキストを最背面に移動しました', 'success');
+    } else if (selectedShapeIndex !== -1) {
+        const shape = shapeObjects.splice(selectedShapeIndex, 1)[0];
+        shapeObjects.unshift(shape);
+        selectedShapeIndex = 0;
+        redrawCanvas();
+        saveState();
+        showNotification('図形を最背面に移動しました', 'success');
+    } else {
+        showNotification('テキストまたは図形を選択してください', 'info');
+    }
+}
+
+function bringForward() {
+    // 選択中のテキストまたは図形を1つ前面に移動
+    if (selectedTextIndex !== -1) {
+        if (selectedTextIndex < textObjects.length - 1) {
+            const text = textObjects[selectedTextIndex];
+            textObjects[selectedTextIndex] = textObjects[selectedTextIndex + 1];
+            textObjects[selectedTextIndex + 1] = text;
+            selectedTextIndex++;
+            redrawCanvas();
+            saveState();
+            showNotification('テキストを前面に移動しました', 'success');
+        } else {
+            showNotification('既に最前面です', 'info');
+        }
+    } else if (selectedShapeIndex !== -1) {
+        if (selectedShapeIndex < shapeObjects.length - 1) {
+            const shape = shapeObjects[selectedShapeIndex];
+            shapeObjects[selectedShapeIndex] = shapeObjects[selectedShapeIndex + 1];
+            shapeObjects[selectedShapeIndex + 1] = shape;
+            selectedShapeIndex++;
+            redrawCanvas();
+            saveState();
+            showNotification('図形を前面に移動しました', 'success');
+        } else {
+            showNotification('既に最前面です', 'info');
+        }
+    } else {
+        showNotification('テキストまたは図形を選択してください', 'info');
+    }
+}
+
+function sendBackward() {
+    // 選択中のテキストまたは図形を1つ背面に移動
+    if (selectedTextIndex !== -1) {
+        if (selectedTextIndex > 0) {
+            const text = textObjects[selectedTextIndex];
+            textObjects[selectedTextIndex] = textObjects[selectedTextIndex - 1];
+            textObjects[selectedTextIndex - 1] = text;
+            selectedTextIndex--;
+            redrawCanvas();
+            saveState();
+            showNotification('テキストを背面に移動しました', 'success');
+        } else {
+            showNotification('既に最背面です', 'info');
+        }
+    } else if (selectedShapeIndex !== -1) {
+        if (selectedShapeIndex > 0) {
+            const shape = shapeObjects[selectedShapeIndex];
+            shapeObjects[selectedShapeIndex] = shapeObjects[selectedShapeIndex - 1];
+            shapeObjects[selectedShapeIndex - 1] = shape;
+            selectedShapeIndex--;
+            redrawCanvas();
+            saveState();
+            showNotification('図形を背面に移動しました', 'success');
+        } else {
+            showNotification('既に最背面です', 'info');
+        }
+    } else {
+        showNotification('テキストまたは図形を選択してください', 'info');
+    }
 }
 
 // 図形を描画する関数
@@ -1650,6 +1759,12 @@ undoBtn.addEventListener('click', undo);
 
 // Redoボタン
 redoBtn.addEventListener('click', redo);
+
+// レイヤー操作ボタン
+bringToFrontBtn.addEventListener('click', bringToFront);
+bringForwardBtn.addEventListener('click', bringForward);
+sendBackwardBtn.addEventListener('click', sendBackward);
+sendToBackBtn.addEventListener('click', sendToBack);
 
 // トリミングボタン
 cropBtn.addEventListener('click', () => {
